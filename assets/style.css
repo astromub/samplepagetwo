@@ -1,0 +1,245 @@
+:root {
+    /* Define the Variable. Default is Red */
+    --primary-color: #ff5e57; 
+    
+    --text-dark: #1a2b4c;
+    --text-light: #6c757d;
+    --bg-grey: #eef1f6;
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Roboto', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-body);
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* --- HEADER --- */
+header.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 5%;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.logo {
+    font-weight: 700;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    letter-spacing: 1px;
+}
+
+.logo-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-color: var(--primary-color);
+    margin-right: 10px;
+    transform: rotate(45deg);
+}
+
+nav a {
+    margin: 0 15px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+
+nav a:hover { color: var(--primary-color); }
+
+/* --- NEW: COLOR STRIPE (The rectangular bar) --- */
+.color-stripe {
+    width: 100%;
+    height: 15px; /* Adjust height as needed */
+    background-color: var(--primary-color);
+    transition: background-color 0.3s ease;
+}
+
+/* --- THEME SWITCHER --- */
+.theme-switch-container {
+    display: flex;
+    align-items: center;
+    margin: 0 15px;
+    padding-left: 15px;
+    border-left: 1px solid #ddd;
+}
+
+.theme-btn {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    margin: 0 5px;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+
+.theme-btn:hover { transform: scale(1.2); }
+
+/* --- BUTTONS --- */
+.btn {
+    padding: 12px 25px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: inline-block;
+    transition: transform 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.btn-outline {
+    border: 1px solid #ddd;
+    background: white;
+    color: var(--text-light);
+    margin-left: 10px;
+}
+
+.btn:hover { transform: translateY(-2px); }
+
+/* --- HERO/PRODUCT LAYOUT (The main content area) --- */
+.hero-container {
+    display: grid;
+    /* Defines three columns: Text (1.5fr) and Products (3fr) */
+    grid-template-columns: 1.5fr 3fr; 
+    align-items: start;
+    padding: 80px 5% 100px 5%;
+    background-color: var(--bg-grey);
+    border-bottom-left-radius: 150px; 
+    min-height: 80vh;
+}
+
+.hero-text {
+    padding-right: 50px;
+}
+
+/* --- PRODUCT GRID (New) --- */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 equal columns for models */
+    gap: 15px;
+    padding: 0 20px;
+}
+
+.product-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.product-card img {
+    width: 100%;
+    height: 300px; /* Consistent height for model images */
+    object-fit: cover;
+    display: block;
+}
+
+/* Product Button Styling (CLICK ME) */
+.btn-product {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 15px 0;
+    text-align: center;
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border-radius: 0; /* Remove rounded corners */
+    transition: opacity 0.3s;
+}
+
+.eyebrow {
+    color: var(--primary-color);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    display: block;
+}
+
+h1 {
+    font-family: var(--font-heading);
+    font-size: 3.5rem;
+    line-height: 1.2;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+}
+
+p.bio {
+    color: var(--text-light);
+    margin-bottom: 30px;
+    max-width: 500px;
+}
+
+/* --- GALLERY SECTION (New) --- */
+.gallery-section {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 equal columns for small images */
+    gap: 10px;
+    width: 90%;
+    margin: 30px auto 0 auto;
+}
+
+.gallery-section img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+
+/* --- FOOTER --- */
+footer {
+    padding: 60px 5%;
+    background: white;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+}
+
+.footer-column h3 {
+    font-family: var(--font-heading);
+    font-size: 1.8rem;
+    max-width: 400px;
+}
+
+/* --- FORM STYLES --- */
+form {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+}
+input, textarea {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: var(--bg-grey);
+}
