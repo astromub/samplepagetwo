@@ -34,8 +34,8 @@ title: AstroMub Store
 </div>
 
 <div class="gallery-section">
-    <img src="{{ site.baseurl }}/assets/images/gallery/item1.jpg" alt="Gallery Item 1">
-    <img src="{{ site.baseurl }}/assets/images/gallery/item2.jpg" alt="Gallery Item 2">
-    <img src="{{ site.baseurl }}/assets/images/gallery/item3.jpg" alt="Gallery Item 3">
-    <img src="{{ site.baseurl }}/assets/images/gallery/item4.jpg" alt="Gallery Item 4">
+    <img src="{{ site.baseurl }}/images/gallery/item1.jpg" alt="Gallery Item 1">
+    <img src="{{ site.baseurl }}/images/gallery/item2.jpg" alt="Gallery Item 2">
+    <img src="{{ site.baseurl }}/images/gallery/item3.jpg" alt="Gallery Item 3">
+    <img src="{{ site.baseurl }}/images/gallery/item4.jpg" alt="Gallery Item 4">
 </div>
