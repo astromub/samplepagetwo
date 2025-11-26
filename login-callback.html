@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html><head><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
+<body>
+  <script>
+    const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
+    const SUPABASE_ANON_KEY = 'your-anon-key';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        window.location.href = '/samplepagetwo/profile.html';
+      } else {
+        window.location.href = '/samplepagetwo/';
+      }
+    });
+  </script>
+</body>
+</html>
