@@ -1,8 +1,8 @@
 # --- Site Information ---
-title: "Sample Page No 1"
+title: "Sample Page No 2"
 author: "AstroMub Limited"
-email: ""
-description: "Professional portfolio of Designer Haris F. Watson."
+email: "paanobaga#outlok.com"
+description: "Professional Web Design ASROMub Limited."
 
 # --- Build Settings ---
 markdown: kramdown
@@ -13,5 +13,5 @@ theme: minima
 # --- URL Settings ---
 # If you host on GitHub Pages, 'url' is your domain (e.g. https://username.github.io)
 # 'baseurl' is your project name if not using a custom domain (e.g. /portfolio)
-baseurl: "/sample-page"
+baseurl: "/samplepagetwo"
 url: "https://astromub.github.io"
