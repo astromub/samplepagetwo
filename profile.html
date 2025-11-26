@@ -1,0 +1,43 @@
+---
+layout: default
+title: My Profile - ASTROMub
+---
+
+<div style="padding:60px 5%; max-width:1000px; margin:0 auto;">
+  <h1>My Profile & Purchases</h1>
+  <div id="profile-content">Loading...</div>
+</div>
+
+<script>
+async function loadProfile() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    window.location.href = '/samplepagetwo/';
+    return;
+  }
+
+  const { data: purchases } = await supabase
+    .from('purchases')
+    .select('*, products(*)')
+    .eq('user_id', session.user.id)
+    .order('purchased_at', { ascending: false });
+
+  document.getElementById('profile-content').innerHTML = `
+    <p><strong>${session.user.user_metadata.full_name || session.user.email}</strong></p>
+    <p>Email: ${session.user.email}</p>
+    <h2 style="margin:40px 0 20px;">My Orders (${purchases.length})</h2>
+    ${purchases.length === 0 ? '<p>No purchases yet.</p>' :
+      '<div style="display:grid; gap:20px;">' + purchases.map(p => `
+        <div style="border:1px solid #ddd; padding:20px; border-radius:8px; display:flex; align-items:center;">
+          <img src="${p.products.image_url}" style="width:80px; height:80px; object-cover:cover; border-radius:8px; margin-right:20px;">
+          <div>
+            <strong>${p.products.title}</strong><br>
+            SKU: ${p.products.sku} | $${p.amount} | ${new Date(p.purchased_at).toLocaleDateString()}
+          </div>
+        </div>
+      `).join('') + '</div>'
+    }
+  `;
+}
+loadProfile();
+</script>
