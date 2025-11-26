@@ -22,6 +22,7 @@
             <a href="#">Services</a>
             <a href="#">Portfolio</a>
             <a href="{{ site.baseurl }}/contact">Contact</a>
+            <div id="user-nav" style="margin-left: 20px; font-weight: 500;"></div>
         </nav>
 
         <div class="theme-switch-container">
@@ -68,6 +69,8 @@
             changeTheme(savedTheme);
         }
     </script>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="{{ site.baseurl }}/assets/auth.js"></script>
+    <script src="{{ site.baseurl }}/assets/cart.js"></script>
 </body>
 </html>
