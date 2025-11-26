@@ -1,0 +1,17 @@
+# --- Site Information ---
+title: "Sample Page No 1"
+author: "AstroMub Limited"
+email: ""
+description: "Professional portfolio of Designer Haris F. Watson."
+
+# --- Build Settings ---
+markdown: kramdown
+theme: minima 
+# (Note: Since we built a custom layout in _layouts/default.html, 
+# Jekyll will use OUR layout instead of the theme's default.)
+
+# --- URL Settings ---
+# If you host on GitHub Pages, 'url' is your domain (e.g. https://username.github.io)
+# 'baseurl' is your project name if not using a custom domain (e.g. /portfolio)
+baseurl: "/sample-page"
+url: "https://astromub.github.io"
