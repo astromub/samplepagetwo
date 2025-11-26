@@ -17,17 +17,17 @@ title: AstroMub Store
 
   <div class="product-grid">
     <div class="product-card">
-        <img src="{{ site.baseurl }}/assets/images/model1.jpg" alt="Model Product 1">
+        <img src="{{ site.baseurl }}/images/model1.jpg" alt="Model Product 1">
         <a href="#" class="btn btn-product">CLICK ME</a>
     </div>
     
     <div class="product-card">
-        <img src="{{ site.baseurl }}/assets/images/model2.jpg" alt="Model Product 2">
+        <img src="{{ site.baseurl }}/images/model2.jpg" alt="Model Product 2">
         <a href="#" class="btn btn-product">CLICK ME</a>
     </div>
     
     <div class="product-card">
-        <img src="{{ site.baseurl }}/assets/images/model3.jpg" alt="Model Product 3">
+        <img src="{{ site.baseurl }}/images/model3.jpg" alt="Model Product 3">
         <a href="#" class="btn btn-product">CLICK ME</a>
     </div>
   </div>
