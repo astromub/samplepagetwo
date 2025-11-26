@@ -2,9 +2,9 @@
     /* Define the Variable. Default is Red */
     --primary-color: #ff5e57; 
     
-    --text-dark: #1a2b4c;
-    --text-light: #6c757d;
-    --bg-grey: #eef1f6;
+    --text-dark: #1a2b4c;     
+    --text-light: #6c757d;    
+    --bg-grey: #eef1f6;       
     --font-heading: 'Playfair Display', serif;
     --font-body: 'Roboto', sans-serif;
 }
@@ -48,6 +48,7 @@ header.site-header {
     display: inline-block;
     width: 20px;
     height: 20px;
+    /* Uses Theme Color */
     background-color: var(--primary-color);
     margin-right: 10px;
     transform: rotate(45deg);
@@ -60,12 +61,14 @@ nav a {
     transition: color 0.3s;
 }
 
+/* Uses Theme Color */
 nav a:hover { color: var(--primary-color); }
 
 /* --- NEW: COLOR STRIPE (The rectangular bar) --- */
 .color-stripe {
     width: 100%;
-    height: 15px; /* Adjust height as needed */
+    height: 15px; 
+    /* Uses Theme Color */
     background-color: var(--primary-color);
     transition: background-color 0.3s ease;
 }
@@ -103,6 +106,7 @@ nav a:hover { color: var(--primary-color); }
 }
 
 .btn-primary {
+    /* Uses Theme Color */
     background-color: var(--primary-color);
     color: white;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
@@ -120,25 +124,28 @@ nav a:hover { color: var(--primary-color); }
 /* --- HERO/PRODUCT LAYOUT (The main content area) --- */
 .hero-container {
     display: grid;
-    /* Defines three columns: Text (1.5fr) and Products (3fr) */
+    /* Sets up 1.5 column for text and 3 columns for products */
     grid-template-columns: 1.5fr 3fr; 
     align-items: start;
-    padding: 80px 5% 100px 5%;
+    /* Reduced bottom padding from 100px to 40px to reduce space */
+    padding: 80px 5% 40px 5%; 
     background-color: var(--bg-grey);
     border-bottom-left-radius: 150px; 
-    min-height: 80vh;
+    /* Removed min-height to allow the container to hug the content */
 }
 
 .hero-text {
     padding-right: 50px;
+    margin-bottom: 20px; 
 }
 
-/* --- PRODUCT GRID (New) --- */
+/* --- PRODUCT GRID --- */
 .product-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /* 3 equal columns for models */
     gap: 15px;
     padding: 0 20px;
+    margin-bottom: 20px; 
 }
 
 .product-card {
@@ -154,7 +161,7 @@ nav a:hover { color: var(--primary-color); }
     display: block;
 }
 
-/* Product Button Styling (CLICK ME) */
+/* Product Button Styling (CLICK ME / SHOP NOW) */
 .btn-product {
     position: absolute;
     bottom: 0;
@@ -162,15 +169,17 @@ nav a:hover { color: var(--primary-color); }
     width: 100%;
     padding: 15px 0;
     text-align: center;
+    /* Uses Theme Color */
     background-color: var(--primary-color);
     color: white;
     font-weight: 700;
     letter-spacing: 2px;
-    border-radius: 0; /* Remove rounded corners */
+    border-radius: 0; 
     transition: opacity 0.3s;
 }
 
 .eyebrow {
+    /* Uses Theme Color */
     color: var(--primary-color);
     text-transform: uppercase;
     font-size: 0.8rem;
@@ -194,13 +203,14 @@ p.bio {
     max-width: 500px;
 }
 
-/* --- GALLERY SECTION (New) --- */
+/* --- GALLERY SECTION --- */
 .gallery-section {
     display: grid;
     grid-template-columns: repeat(4, 1fr); /* 4 equal columns for small images */
     gap: 10px;
     width: 90%;
-    margin: 30px auto 0 auto;
+    /* Reduced top margin from 30px to 10px to reduce space */
+    margin: 10px auto 30px auto; 
 }
 
 .gallery-section img {
@@ -209,7 +219,6 @@ p.bio {
     object-fit: cover;
     border-radius: 8px;
 }
-
 
 /* --- FOOTER --- */
 footer {
@@ -229,7 +238,7 @@ footer {
     max-width: 400px;
 }
 
-/* --- FORM STYLES --- */
+/* --- FORM STYLES (For Contact Page) --- */
 form {
     max-width: 600px;
     margin: 50px auto;
