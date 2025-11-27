@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 e.preventDefault();
                 supabase.auth.signInWithOAuth({
                       provider: 'github',
-                      options: { redirectTo: 'https://astromub.github.io/samplepagetwo/login-callback.html'
+                      options: { redirectTo: 'https://astromub.github.io/samplepagetwo/login-callback.html' }
   }
 })
             });
