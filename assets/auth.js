@@ -1,14 +1,14 @@
 const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
 
-// Initialize Supabase client
-let supabase;
-try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.supabase = supabase;
-    console.log('Supabase client initialized successfully');
-} catch (error) {
-    console.error('Failed to initialize Supabase client:', error);
+// Global Supabase initialization
+if (!window.supabase) {
+    try {
+        window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase client initialized globally');
+    } catch (error) {
+        console.error('Failed to initialize Supabase client:', error);
+    }
 }
 
 // Auth state management
@@ -28,11 +28,298 @@ function getRedirectUrl() {
     return `${window.location.origin}/samplepagetwo/login-callback.html`;
 }
 
+// Show login modal
+function showLoginModal() {
+    const modal = document.createElement('div');
+    modal.id = 'login-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; color: #333;">Login to AstroMub Store</h2>
+                <button onclick="closeLoginModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</button>
+            </div>
+            
+            <form id="login-form">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Email</label>
+                    <input type="email" id="login-email" required 
+                           style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 1rem; transition: border-color 0.3s;"
+                           placeholder="Enter your email">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Password</label>
+                    <input type="password" id="login-password" required 
+                           style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 1rem; transition: border-color 0.3s;"
+                           placeholder="Enter your password">
+                </div>
+                
+                <button type="submit" 
+                        style="width: 100%; background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: background 0.3s;">
+                    Login
+                </button>
+            </form>
+            
+            <div style="text-align: center; margin: 1.5rem 0;">
+                <span style="color: #666;">Don't have an account? </span>
+                <a href="#" id="show-signup" style="color: #007bff; text-decoration: none; font-weight: 500;">Sign up</a>
+            </div>
+            
+            <div style="border-top: 1px solid #e1e5e9; padding-top: 1.5rem;">
+                <button onclick="loginWithGitHub()" 
+                        style="width: 100%; background: #333; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <span>Login with GitHub</span>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    document.getElementById('login-form').addEventListener('submit', handleEmailLogin);
+    document.getElementById('show-signup').addEventListener('click', showSignupModal);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeLoginModal();
+        }
+    });
+}
+
+// Show signup modal
+function showSignupModal() {
+    closeLoginModal();
+    
+    const modal = document.createElement('div');
+    modal.id = 'signup-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; color: #333;">Create Account</h2>
+                <button onclick="closeSignupModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</button>
+            </div>
+            
+            <form id="signup-form">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Full Name</label>
+                    <input type="text" id="signup-name" required 
+                           style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 1rem; transition: border-color 0.3s;"
+                           placeholder="Enter your full name">
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Email</label>
+                    <input type="email" id="signup-email" required 
+                           style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 1rem; transition: border-color 0.3s;"
+                           placeholder="Enter your email">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Password</label>
+                    <input type="password" id="signup-password" required minlength="6"
+                           style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 1rem; transition: border-color 0.3s;"
+                           placeholder="Create a password (min. 6 characters)">
+                </div>
+                
+                <button type="submit" 
+                        style="width: 100%; background: #28a745; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: background 0.3s;">
+                    Create Account
+                </button>
+            </form>
+            
+            <div style="text-align: center; margin: 1.5rem 0;">
+                <span style="color: #666;">Already have an account? </span>
+                <a href="#" id="show-login" style="color: #007bff; text-decoration: none; font-weight: 500;">Login</a>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    document.getElementById('signup-form').addEventListener('submit', handleEmailSignup);
+    document.getElementById('show-login').addEventListener('click', showLoginModal);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeSignupModal();
+        }
+    });
+}
+
+// Close modals
+function closeLoginModal() {
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.remove();
+}
+
+function closeSignupModal() {
+    const modal = document.getElementById('signup-modal');
+    if (modal) modal.remove();
+}
+
+// Handle email login
+async function handleEmailLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    
+    if (!email || !password) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    // Show loading state
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Logging in...';
+    submitBtn.disabled = true;
+    
+    try {
+        const { data, error } = await window.supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+        
+        if (error) throw error;
+        
+        // Success
+        closeLoginModal();
+        alert('Login successful!');
+        location.reload(); // Refresh to update UI
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Login failed: ' + error.message);
+        
+        // Reset button
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+// Handle email signup
+async function handleEmailSignup(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('signup-name').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    
+    if (!name || !email || !password) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    if (password.length < 6) {
+        alert('Password must be at least 6 characters long');
+        return;
+    }
+    
+    // Show loading state
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Creating Account...';
+    submitBtn.disabled = true;
+    
+    try {
+        // Create user in Supabase Auth
+        const { data, error } = await window.supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: {
+                    full_name: name,
+                    user_name: name.toLowerCase().replace(/\s+/g, '_')
+                }
+            }
+        });
+        
+        if (error) throw error;
+        
+        if (data.user) {
+            // Create profile in profiles table
+            const { error: profileError } = await window.supabase
+                .from('profiles')
+                .insert({
+                    id: data.user.id,
+                    username: name.toLowerCase().replace(/\s+/g, '_'),
+                    full_name: name,
+                    company: 'Astronub Limited'
+                });
+            
+            if (profileError) {
+                console.warn('Profile creation warning:', profileError);
+            }
+            
+            closeSignupModal();
+            alert('Account created successfully! Please check your email to verify your account.');
+        }
+        
+    } catch (error) {
+        console.error('Signup error:', error);
+        alert('Signup failed: ' + error.message);
+        
+        // Reset button
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+// Handle GitHub login
+async function loginWithGitHub() {
+    setAuthLoading(true);
+    try {
+        const { error } = await window.supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: { 
+                redirectTo: getRedirectUrl(),
+                scopes: 'user:email'
+            }
+        });
+        if (error) throw error;
+    } catch (error) {
+        console.error('GitHub login error:', error);
+        alert('GitHub login failed. Please try again.');
+        setAuthLoading(false);
+    }
+}
+
 // Handle user logout
 async function handleLogout() {
     setAuthLoading(true);
     try {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await window.supabase.auth.signOut();
         if (error) throw error;
         
         console.log('Logout successful');
@@ -40,26 +327,6 @@ async function handleLogout() {
     } catch (error) {
         console.error('Logout error:', error);
         alert('Logout failed. Please try again.');
-        setAuthLoading(false);
-    }
-}
-
-// Handle user login - FIXED: Minimal GitHub permissions
-async function handleLogin() {
-    setAuthLoading(true);
-    try {
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: { 
-                redirectTo: getRedirectUrl(),
-                // Minimal scopes - only what we actually need
-                scopes: 'user:email'
-            }
-        });
-        if (error) throw error;
-    } catch (error) {
-        console.error('Login error:', error);
-        alert('Login failed. Please try again.');
         setAuthLoading(false);
     }
 }
@@ -98,7 +365,7 @@ function updateAuthUI(session) {
         
     } else {
         userNav.innerHTML = `
-            <a href="#" id="login-btn" class="nav-link login-btn">🔐 Login with GitHub</a>
+            <a href="#" id="login-btn" class="nav-link login-btn">🔐 Login / Sign Up</a>
             <a href="/samplepagetwo/products.html" class="nav-link">🛍️ Products</a>
             <a href="/samplepagetwo/cart.html" class="nav-link">🛒 Cart</a>
         `;
@@ -108,7 +375,7 @@ function updateAuthUI(session) {
         loginBtn?.replaceWith(loginBtn.cloneNode(true));
         document.getElementById('login-btn')?.addEventListener('click', async (e) => {
             e.preventDefault();
-            await handleLogin();
+            showLoginModal();
         });
     }
 }
@@ -121,7 +388,7 @@ async function initializeAuth() {
         setAuthLoading(true);
         
         // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await window.supabase.auth.getSession();
         
         if (error) {
             console.error('Error getting session:', error);
@@ -134,7 +401,7 @@ async function initializeAuth() {
         authInitialized = true;
         
         // Set up auth state change listener (only once)
-        supabase.auth.onAuthStateChange((event, session) => {
+        window.supabase.auth.onAuthStateChange((event, session) => {
             console.log('Auth state changed:', event);
             
             // Only update if session actually changed
@@ -155,12 +422,12 @@ async function initializeAuth() {
 // Get current user with profile data
 async function getCurrentUserWithProfile() {
     try {
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const { data: { user }, error } = await window.supabase.auth.getUser();
         if (error) throw error;
         
         if (user) {
             // Get profile data
-            const { data: profile, error: profileError } = await supabase
+            const { data: profile, error: profileError } = await window.supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', user.id)
@@ -181,13 +448,13 @@ async function getCurrentUserWithProfile() {
 
 // Check if user is authenticated
 async function isAuthenticated() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await window.supabase.auth.getSession();
     return !!session;
 }
 
 // Initialize auth when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    if (supabase) {
+    if (window.supabase) {
         // Small delay to ensure DOM is fully ready
         setTimeout(() => {
             initializeAuth();
@@ -203,7 +470,11 @@ window.authUtils = {
     isAuthenticated,
     initializeAuth,
     handleLogout,
-    handleLogin
+    showLoginModal,
+    showSignupModal,
+    closeLoginModal,
+    closeSignupModal,
+    loginWithGitHub
 };
 
 // Add basic CSS for auth elements
@@ -273,6 +544,12 @@ const authStyles = `
     right: -2px;
 }
 
+/* Modal input focus styles */
+input:focus {
+    outline: none;
+    border-color: #007bff !important;
+}
+
 @media (max-width: 768px) {
     #user-nav {
         flex-direction: column;
@@ -292,109 +569,7 @@ const authStyles = `
         padding: 6px 10px;
     }
 }
-
-/* Fix for broken layout */
-.hero-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 2rem 1rem;
-}
-
-.hero-text {
-    max-width: 600px;
-    margin-bottom: 2rem;
-}
-
-.eyebrow {
-    display: block;
-    font-size: 0.9rem;
-    color: #666;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 1rem;
-}
-
-.hero-text h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
-
-.bio {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: #666;
-    margin-bottom: 2rem;
-}
-
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    width: 100%;
-    max-width: 1000px;
-}
-
-.product-card {
-    position: relative;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
-}
-
-.product-card:hover {
-    transform: translateY(-5px);
-}
-
-.product-card img {
-    width: 100%;
-    height: 300px;
-    object-fit: cover;
-}
-
-.btn-product {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #007bff;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.gallery-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    padding: 2rem 1rem;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.gallery-section img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 8px;
-}
 </style>
 `;
 
-// Ensure auth is properly initialized for profile page
-if (document.getElementById('profile-content')) {
-    console.log('Profile page detected, ensuring auth is initialized...');
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(() => {
-            if (window.supabase && !authInitialized) {
-                initializeAuth();
-            }
-        }, 100);
-    });
-}
 document.head.insertAdjacentHTML('beforeend', authStyles);
