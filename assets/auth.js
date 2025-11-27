@@ -27,9 +27,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('login-btn')?.addEventListener('click', (e) => {
                 e.preventDefault();
                 supabase.auth.signInWithOAuth({
-                    provider: 'github',
-                    options: { redirectTo: location.origin + '/samplepagetwo/login-callback.html' }
-                });
+                      provider: 'github',
+                      options: { redirectTo: 'https://astromub.github.io/samplepagetwo/login-callback.html'
+  }
+})
             });
         }
     }
