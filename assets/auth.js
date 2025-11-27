@@ -1,8 +1,8 @@
 const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
 
-// Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client and make it globally available
+window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Utility function to show loading state
 function setAuthLoading(isLoading) {
@@ -16,7 +16,6 @@ function setAuthLoading(isLoading) {
 
 // Utility function to get redirect URL
 function getRedirectUrl() {
-    // Use current origin to work both locally and on GitHub Pages
     const baseUrl = window.location.origin;
     return `${baseUrl}/samplepagetwo/login-callback.html`;
 }
@@ -24,13 +23,12 @@ function getRedirectUrl() {
 // Handle user logout
 async function handleLogout() {
     setAuthLoading(true);
-    const { error } = await supabase.auth.signOut();
+    const { error } = await window.supabase.auth.signOut();
     
     if (error) {
         console.error('Logout error:', error);
         alert('Logout failed. Please try again.');
     } else {
-        // Redirect to home page after successful logout
         window.location.href = '/samplepagetwo/';
     }
 }
@@ -38,7 +36,7 @@ async function handleLogout() {
 // Handle user login
 async function handleLogin() {
     setAuthLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await window.supabase.auth.signInWithOAuth({
         provider: 'github',
         options: { 
             redirectTo: getRedirectUrl()
@@ -58,7 +56,6 @@ function updateAuthUI(session) {
     if (!userNav) return;
 
     if (session?.user) {
-        // User is logged in
         const userName = session.user.user_metadata?.full_name || 
                         session.user.user_metadata?.user_name || 
                         session.user.email || 
@@ -70,7 +67,6 @@ function updateAuthUI(session) {
             <a href="#" id="logout-btn" class="nav-link logout-btn">Logout</a>
         `;
         
-        // Add event listener for logout button
         document.getElementById('logout-btn')?.addEventListener('click', async (e) => {
             e.preventDefault();
             await handleLogout();
@@ -78,12 +74,10 @@ function updateAuthUI(session) {
         
         console.log('User logged in:', session.user);
     } else {
-        // User is not logged in
         userNav.innerHTML = `
             <a href="#" id="login-btn" class="nav-link login-btn">Login with GitHub</a>
         `;
         
-        // Add event listener for login button
         document.getElementById('login-btn')?.addEventListener('click', async (e) => {
             e.preventDefault();
             await handleLogin();
@@ -96,8 +90,7 @@ async function initializeAuth() {
     try {
         setAuthLoading(true);
         
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await window.supabase.auth.getSession();
         
         if (error) {
             console.error('Error getting session:', error);
@@ -105,11 +98,9 @@ async function initializeAuth() {
             return;
         }
         
-        // Update UI with current session state
         updateAuthUI(session);
         
-        // Set up auth state change listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        const { data: { subscription } } = window.supabase.auth.onAuthStateChange(
             async (event, session) => {
                 console.log('Auth state changed:', event);
                 
@@ -133,7 +124,6 @@ async function initializeAuth() {
             }
         );
         
-        // Store subscription for cleanup (if needed)
         window.authSubscription = subscription;
         
     } catch (error) {
@@ -144,9 +134,9 @@ async function initializeAuth() {
     }
 }
 
-// Get current user info (useful for other parts of your app)
+// Get current user info
 async function getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const { data: { user }, error } = await window.supabase.auth.getUser();
     if (error) {
         console.error('Error getting user:', error);
         return null;
@@ -154,22 +144,21 @@ async function getCurrentUser() {
     return user;
 }
 
-// Check if user is authenticated (useful for protected pages)
+// Check if user is authenticated
 function isAuthenticated() {
-    return supabase.auth.getSession().then(({ data: { session } }) => {
+    return window.supabase.auth.getSession().then(({ data: { session } }) => {
         return !!session;
     });
 }
 
 // Initialize auth when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Wait a bit to ensure all elements are rendered
     setTimeout(() => {
         initializeAuth();
     }, 100);
 });
 
-// Export functions for use in other scripts (if needed)
+// Export functions for use in other scripts
 window.authUtils = {
     getCurrentUser,
     isAuthenticated,
@@ -178,7 +167,7 @@ window.authUtils = {
     handleLogin
 };
 
-// Optional: Add some basic CSS for auth elements
+// Add basic CSS for auth elements
 const authStyles = `
 <style>
 .welcome-text {
@@ -218,5 +207,4 @@ const authStyles = `
 </style>
 `;
 
-// Inject styles into document head
 document.head.insertAdjacentHTML('beforeend', authStyles);
