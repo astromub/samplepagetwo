@@ -386,4 +386,15 @@ const authStyles = `
 </style>
 `;
 
+// Ensure auth is properly initialized for profile page
+if (document.getElementById('profile-content')) {
+    console.log('Profile page detected, ensuring auth is initialized...');
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            if (window.supabase && !authInitialized) {
+                initializeAuth();
+            }
+        }, 100);
+    });
+}
 document.head.insertAdjacentHTML('beforeend', authStyles);
