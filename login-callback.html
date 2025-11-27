@@ -3,8 +3,6 @@
 <head>
     <title>Redirecting... - AstroMub Store</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/samplepagetwo/assets/auth.js"></script>
-    <script src="/samplepagetwo/assets/cart.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -18,6 +16,9 @@
         .loading {
             text-align: center;
             padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .spinner {
             border: 4px solid #f3f3f3;
@@ -31,6 +32,14 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        p {
+            color: #666;
+            margin: 0;
         }
     </style>
 </head>
