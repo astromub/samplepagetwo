@@ -3,6 +3,20 @@ layout: default
 title: AstroMub Store
 ---
 
+---
+layout: default
+title: AstroMub Store
+---
+
+<!-- Add navigation bar with auth -->
+<nav class="navbar">
+  <a href="/samplepagetwo/" class="logo">AstroMub Store</a>
+  <div id="user-nav">
+    <!-- Auth content will be injected here by auth.js -->
+    <span style="color: #666;">Loading...</span>
+  </div>
+</nav>
+
 <div class="hero-container">
   <div class="hero-text">
     <span class="eyebrow">GET EVERY SINGLE SOLUTIONS</span>
@@ -41,15 +55,6 @@ title: AstroMub Store
     <img src="{{ site.baseurl }}/images/gallery/item4.jpg" alt="Featured Product 4">
 </div>
 
-<!-- Add navigation bar with auth -->
-<nav class="navbar">
-  <a href="/samplepagetwo/" class="logo">AstroMub Store</a>
-  <div id="user-nav">
-    <!-- Auth content will be injected here by auth.js -->
-    <span style="color: #666;">Loading...</span>
-  </div>
-</nav>
-
 <!-- Load Supabase and auth scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/samplepagetwo/assets/auth.js"></script>
@@ -76,15 +81,15 @@ title: AstroMub Store
     text-decoration: none;
 }
 
-/* Hero Section Styles */
+/* Hero Section Styles - WHITE BACKGROUND */
 .hero-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 4rem 1rem 2rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    padding: 2rem 1rem;
+    background: white;
+    color: #333;
     min-height: 80vh;
     justify-content: center;
 }
@@ -97,7 +102,7 @@ title: AstroMub Store
 .eyebrow {
     display: block;
     font-size: 0.9rem;
-    color: rgba(255,255,255,0.8);
+    color: #666;
     text-transform: uppercase;
     letter-spacing: 2px;
     margin-bottom: 1rem;
@@ -107,14 +112,17 @@ title: AstroMub Store
 .hero-text h1 {
     font-size: 3.5rem;
     margin-bottom: 1.5rem;
-    color: white;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    color: #333;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .bio {
     font-size: 1.2rem;
     line-height: 1.6;
-    color: rgba(255,255,255,0.9);
+    color: #666;
     margin-bottom: 2.5rem;
 }
 
@@ -131,29 +139,29 @@ title: AstroMub Store
 }
 
 .btn-primary {
-    background: #ff6b6b;
+    background: #007bff;
     color: white;
-    border-color: #ff6b6b;
+    border-color: #007bff;
 }
 
 .btn-primary:hover {
-    background: #ff5252;
-    border-color: #ff5252;
+    background: #0056b3;
+    border-color: #0056b3;
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255,107,107,0.3);
+    box-shadow: 0 8px 20px rgba(0,123,255,0.3);
 }
 
 .btn-outline {
     background: transparent;
-    color: white;
-    border-color: white;
+    color: #007bff;
+    border-color: #007bff;
 }
 
 .btn-outline:hover {
-    background: white;
-    color: #667eea;
+    background: #007bff;
+    color: white;
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255,255,255,0.2);
+    box-shadow: 0 8px 20px rgba(0,123,255,0.2);
 }
 
 /* Product Grid Styles */
@@ -170,14 +178,15 @@ title: AstroMub Store
     position: relative;
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
     background: white;
+    border: 1px solid #f0f0f0;
 }
 
 .product-card:hover {
     transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
 }
 
 .product-card img {
@@ -196,19 +205,19 @@ title: AstroMub Store
     bottom: 25px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255,255,255,0.95);
-    color: #333;
+    background: #007bff;
+    color: white;
     padding: 14px 28px;
     border-radius: 8px;
     text-decoration: none;
     font-weight: 600;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.2);
     transition: all 0.3s ease;
+    border: 2px solid #007bff;
 }
 
 .btn-product:hover {
     background: white;
+    color: #007bff;
     transform: translateX(-50%) translateY(-2px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
@@ -275,7 +284,7 @@ title: AstroMub Store
     }
     
     .hero-container {
-        padding: 6rem 1rem 2rem;
+        padding: 4rem 1rem 2rem;
         min-height: 70vh;
     }
 }
