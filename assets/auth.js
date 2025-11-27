@@ -1,59 +1,65 @@
 const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
 
-// Initialize Supabase client and make it globally available
-console.log('Initializing Supabase client...');
-window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client
+let supabase;
+try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabase = supabase;
+    console.log('Supabase client initialized successfully');
+} catch (error) {
+    console.error('Failed to initialize Supabase client:', error);
+}
+
+// Auth state management
+let authInitialized = false;
+let currentSession = null;
 
 // Utility function to show loading state
 function setAuthLoading(isLoading) {
     const userNav = document.getElementById('user-nav');
-    if (userNav) {
-        if (isLoading) {
-            userNav.innerHTML = '<span>Loading...</span>';
-        }
+    if (userNav && isLoading) {
+        userNav.innerHTML = '<span style="color: #666;">Loading...</span>';
     }
 }
 
-// Utility function to get redirect URL
+// Get redirect URL
 function getRedirectUrl() {
-    const baseUrl = window.location.origin;
-    const redirectUrl = `${baseUrl}/samplepagetwo/login-callback.html`;
-    console.log('Using redirect URL:', redirectUrl);
-    return redirectUrl;
+    return `${window.location.origin}/samplepagetwo/login-callback.html`;
 }
 
 // Handle user logout
 async function handleLogout() {
     setAuthLoading(true);
-    const { error } = await window.supabase.auth.signOut();
-    
-    if (error) {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        
+        console.log('Logout successful');
+        window.location.href = '/samplepagetwo/';
+    } catch (error) {
         console.error('Logout error:', error);
         alert('Logout failed. Please try again.');
         setAuthLoading(false);
-    } else {
-        console.log('Logout successful');
-        window.location.href = '/samplepagetwo/';
     }
 }
 
 // Handle user login
 async function handleLogin() {
     setAuthLoading(true);
-    const { error } = await window.supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: { 
-            redirectTo: getRedirectUrl()
-        }
-    });
-    
-    if (error) {
+    try {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: { 
+                redirectTo: getRedirectUrl(),
+                scopes: 'read:user'
+            }
+        });
+        if (error) throw error;
+    } catch (error) {
         console.error('Login error:', error);
-        setAuthLoading(false);
         alert('Login failed. Please try again.');
-    } else {
-        console.log('OAuth flow initiated');
+        setAuthLoading(false);
     }
 }
 
@@ -65,26 +71,33 @@ function updateAuthUI(session) {
     if (session?.user) {
         const userName = session.user.user_metadata?.full_name || 
                         session.user.user_metadata?.user_name || 
-                        session.user.email || 
+                        session.user.email?.split('@')[0] || 
                         'User';
         
         userNav.innerHTML = `
             <span class="welcome-text">Welcome, ${userName}</span>
             <a href="/samplepagetwo/profile.html" class="nav-link">Profile</a>
+            <a href="/samplepagetwo/products.html" class="nav-link">Products</a>
             <a href="#" id="logout-btn" class="nav-link logout-btn">Logout</a>
         `;
         
+        // Remove existing event listeners and add new one
+        const logoutBtn = document.getElementById('logout-btn');
+        logoutBtn?.replaceWith(logoutBtn.cloneNode(true));
         document.getElementById('logout-btn')?.addEventListener('click', async (e) => {
             e.preventDefault();
             await handleLogout();
         });
         
-        console.log('User logged in:', session.user.email);
     } else {
         userNav.innerHTML = `
             <a href="#" id="login-btn" class="nav-link login-btn">Login with GitHub</a>
+            <a href="/samplepagetwo/products.html" class="nav-link">Products</a>
         `;
         
+        // Remove existing event listeners and add new one
+        const loginBtn = document.getElementById('login-btn');
+        loginBtn?.replaceWith(loginBtn.cloneNode(true));
         document.getElementById('login-btn')?.addEventListener('click', async (e) => {
             e.preventDefault();
             await handleLogin();
@@ -92,13 +105,15 @@ function updateAuthUI(session) {
     }
 }
 
-// Check authentication state and initialize auth system
+// Initialize authentication system
 async function initializeAuth() {
+    if (authInitialized) return;
+    
     try {
-        console.log('Initializing authentication...');
         setAuthLoading(true);
         
-        const { data: { session }, error } = await window.supabase.auth.getSession();
+        // Get current session
+        const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
             console.error('Error getting session:', error);
@@ -106,39 +121,20 @@ async function initializeAuth() {
             return;
         }
         
-        console.log('Session loaded:', session ? 'User authenticated' : 'No session');
+        currentSession = session;
         updateAuthUI(session);
+        authInitialized = true;
         
-        // Set up auth state change listener
-        const { data: { subscription } } = window.supabase.auth.onAuthStateChange(
-            async (event, session) => {
-                console.log('Auth state changed:', event);
-                
-                switch (event) {
-                    case 'SIGNED_IN':
-                        console.log('User signed in!');
-                        updateAuthUI(session);
-                        break;
-                    case 'SIGNED_OUT':
-                        console.log('User signed out!');
-                        updateAuthUI(null);
-                        break;
-                    case 'TOKEN_REFRESHED':
-                        console.log('Token refreshed');
-                        break;
-                    case 'USER_UPDATED':
-                        console.log('User updated');
-                        updateAuthUI(session);
-                        break;
-                    case 'INITIAL_SESSION':
-                        console.log('Initial session loaded');
-                        updateAuthUI(session);
-                        break;
-                }
+        // Set up auth state change listener (only once)
+        supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth state changed:', event);
+            
+            // Only update if session actually changed
+            if (JSON.stringify(session) !== JSON.stringify(currentSession)) {
+                currentSession = session;
+                updateAuthUI(session);
             }
-        );
-        
-        window.authSubscription = subscription;
+        });
         
     } catch (error) {
         console.error('Auth initialization error:', error);
@@ -148,38 +144,112 @@ async function initializeAuth() {
     }
 }
 
-// Get current user info
-async function getCurrentUser() {
-    const { data: { user }, error } = await window.supabase.auth.getUser();
-    if (error) {
-        console.error('Error getting user:', error);
+// Get current user with profile data
+async function getCurrentUserWithProfile() {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        
+        if (user) {
+            // Get profile data
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+            
+            if (profileError && profileError.code !== 'PGRST116') {
+                console.error('Error fetching profile:', profileError);
+            }
+            
+            return { user, profile: profile || {} };
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting user with profile:', error);
         return null;
     }
-    return user;
 }
 
 // Check if user is authenticated
-function isAuthenticated() {
-    return window.supabase.auth.getSession().then(({ data: { session } }) => {
-        return !!session;
-    });
+async function isAuthenticated() {
+    const { data: { session } } = await supabase.auth.getSession();
+    return !!session;
 }
 
 // Initialize auth when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing auth...');
-    setTimeout(() => {
-        initializeAuth();
-    }, 100);
+    if (supabase) {
+        // Small delay to ensure DOM is fully ready
+        setTimeout(() => {
+            initializeAuth();
+        }, 50);
+    } else {
+        console.error('Supabase client not available');
+    }
 });
 
 // Export functions for use in other scripts
 window.authUtils = {
-    getCurrentUser,
+    getCurrentUser: getCurrentUserWithProfile,
     isAuthenticated,
     initializeAuth,
     handleLogout,
     handleLogin
 };
 
-console.log('Auth.js loaded successfully');
+// Add basic CSS for auth elements
+const authStyles = `
+<style>
+.welcome-text {
+    color: #333;
+    font-weight: 500;
+    margin-right: 15px;
+}
+
+.nav-link {
+    color: #007bff;
+    text-decoration: none;
+    margin: 0 8px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    font-size: 14px;
+}
+
+.nav-link:hover {
+    background-color: #f8f9fa;
+}
+
+.logout-btn {
+    color: #dc3545;
+}
+
+.login-btn {
+    color: #28a745;
+    font-weight: 500;
+}
+
+#user-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    #user-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .welcome-text {
+        margin-right: 0;
+        margin-bottom: 5px;
+    }
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', authStyles);
