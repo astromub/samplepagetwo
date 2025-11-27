@@ -2,6 +2,7 @@ const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
 
 // Initialize Supabase client and make it globally available
+console.log('Initializing Supabase client...');
 window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Utility function to show loading state
@@ -17,7 +18,9 @@ function setAuthLoading(isLoading) {
 // Utility function to get redirect URL
 function getRedirectUrl() {
     const baseUrl = window.location.origin;
-    return `${baseUrl}/samplepagetwo/login-callback.html`;
+    const redirectUrl = `${baseUrl}/samplepagetwo/login-callback.html`;
+    console.log('Using redirect URL:', redirectUrl);
+    return redirectUrl;
 }
 
 // Handle user logout
@@ -28,7 +31,9 @@ async function handleLogout() {
     if (error) {
         console.error('Logout error:', error);
         alert('Logout failed. Please try again.');
+        setAuthLoading(false);
     } else {
+        console.log('Logout successful');
         window.location.href = '/samplepagetwo/';
     }
 }
@@ -47,6 +52,8 @@ async function handleLogin() {
         console.error('Login error:', error);
         setAuthLoading(false);
         alert('Login failed. Please try again.');
+    } else {
+        console.log('OAuth flow initiated');
     }
 }
 
@@ -72,7 +79,7 @@ function updateAuthUI(session) {
             await handleLogout();
         });
         
-        console.log('User logged in:', session.user);
+        console.log('User logged in:', session.user.email);
     } else {
         userNav.innerHTML = `
             <a href="#" id="login-btn" class="nav-link login-btn">Login with GitHub</a>
@@ -88,6 +95,7 @@ function updateAuthUI(session) {
 // Check authentication state and initialize auth system
 async function initializeAuth() {
     try {
+        console.log('Initializing authentication...');
         setAuthLoading(true);
         
         const { data: { session }, error } = await window.supabase.auth.getSession();
@@ -98,8 +106,10 @@ async function initializeAuth() {
             return;
         }
         
+        console.log('Session loaded:', session ? 'User authenticated' : 'No session');
         updateAuthUI(session);
         
+        // Set up auth state change listener
         const { data: { subscription } } = window.supabase.auth.onAuthStateChange(
             async (event, session) => {
                 console.log('Auth state changed:', event);
@@ -118,6 +128,10 @@ async function initializeAuth() {
                         break;
                     case 'USER_UPDATED':
                         console.log('User updated');
+                        updateAuthUI(session);
+                        break;
+                    case 'INITIAL_SESSION':
+                        console.log('Initial session loaded');
                         updateAuthUI(session);
                         break;
                 }
@@ -153,6 +167,7 @@ function isAuthenticated() {
 
 // Initialize auth when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing auth...');
     setTimeout(() => {
         initializeAuth();
     }, 100);
@@ -167,44 +182,4 @@ window.authUtils = {
     handleLogin
 };
 
-// Add basic CSS for auth elements
-const authStyles = `
-<style>
-.welcome-text {
-    color: #333;
-    font-weight: 500;
-    margin-right: 15px;
-}
-
-.nav-link {
-    color: #007bff;
-    text-decoration: none;
-    margin: 0 10px;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-.nav-link:hover {
-    background-color: #f8f9fa;
-}
-
-.logout-btn {
-    color: #dc3545;
-}
-
-.login-btn {
-    color: #28a745;
-    font-weight: 500;
-}
-
-#user-nav {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-</style>
-`;
-
-document.head.insertAdjacentHTML('beforeend', authStyles);
+console.log('Auth.js loaded successfully');
