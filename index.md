@@ -41,6 +41,10 @@ title: AstroMub Store
     <img src="{{ site.baseurl }}/images/gallery/item4.jpg" alt="Featured Product 4">
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/samplepagetwo/assets/auth.js"></script>
+<script src="/samplepagetwo/assets/cart.js"></script>
+
 <style>
 .btn {
     display: inline-block;
@@ -76,3 +80,4 @@ title: AstroMub Store
     transform: translateY(-2px);
 }
 </style>
+
