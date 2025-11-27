@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -122,6 +124,7 @@
             color: #dc3545;
             background: #f8d7da;
             border-radius: 8px;
+            border: 1px solid #f5c6cb;
         }
 
         .login-prompt {
@@ -141,6 +144,7 @@
             cursor: pointer;
             font-size: 1rem;
             transition: all 0.2s;
+            margin: 0.25rem;
         }
 
         .btn:hover {
@@ -153,6 +157,14 @@
 
         .btn-login:hover {
             background: #218838;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
         }
 
         .purchase-history {
@@ -174,6 +186,21 @@
             background: #f8f9fa;
             border-radius: 6px;
         }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -194,73 +221,132 @@
     </div>
 
     <script>
-        // Add spinner styles
-        const spinnerStyles = `
-            <style>
-                .spinner {
-                    border: 4px solid #f3f3f3;
-                    border-top: 4px solid #007bff;
-                    border-radius: 50%;
-                    width: 40px;
-                    height: 40px;
-                    animation: spin 1s linear infinite;
-                    margin: 0 auto 1rem;
-                }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
-        `;
-        document.head.insertAdjacentHTML('beforeend', spinnerStyles);
-
         async function loadProfile() {
             const profileContent = document.getElementById('profile-content');
             
             try {
+                console.log('Starting profile load...');
+                
+                // Wait for supabase to be available
                 if (!window.supabase) {
+                    console.log('Supabase not available, waiting...');
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
 
                 if (!window.supabase) {
-                    throw new Error('Authentication service is not available');
+                    throw new Error('Authentication service is not available. Please refresh the page.');
                 }
 
+                console.log('Getting session...');
                 const { data: { session }, error } = await window.supabase.auth.getSession();
                 
-                if (error) throw new Error('Authentication error: ' + error.message);
-                if (!session) throw new Error('Please log in to view your profile');
-
-                // Get user with profile data
-                const userData = await window.authUtils.getCurrentUser();
-                if (!userData) throw new Error('Failed to load user data');
-
-                const { user, profile } = userData;
-                
-                // Get purchase history
-                const { data: purchases, error: purchaseError } = await window.supabase
-                    .from('purchases')
-                    .select(`
-                        *,
-                        products (*)
-                    `)
-                    .eq('user_id', user.id)
-                    .order('created_at', { ascending: false });
-
-                if (purchaseError) {
-                    console.error('Error loading purchases:', purchaseError);
+                if (error) {
+                    throw new Error('Authentication error: ' + error.message);
                 }
 
-                const userName = profile.full_name || user.user_metadata?.full_name || user.email.split('@')[0];
-                const userEmail = user.email;
-                const company = profile.company || 'Astronub Limited';
+                console.log('Session:', session);
+
+                if (!session) {
+                    profileContent.innerHTML = `
+                        <div class="login-prompt">
+                            <h2>Welcome to AstroMub Store</h2>
+                            <p>Please log in to access your profile and purchase history.</p>
+                            <a href="#" id="profile-login-btn" class="btn btn-login">Login with GitHub</a>
+                        </div>
+                    `;
+                    
+                    document.getElementById('profile-login-btn')?.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        try {
+                            await window.authUtils.handleLogin();
+                        } catch (error) {
+                            console.error('Login error:', error);
+                            alert('Login failed: ' + error.message);
+                        }
+                    });
+                    return;
+                }
+
+                // User is logged in - display profile
+                console.log('User logged in, loading profile data...');
+                const user = session.user;
+                
+                if (!user) {
+                    throw new Error('User data not available');
+                }
+
+                // Get user profile data safely
+                let profile = {};
+                try {
+                    const { data: profileData, error: profileError } = await window.supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (!profileError) {
+                        profile = profileData || {};
+                    }
+                } catch (profileError) {
+                    console.warn('Could not load profile data:', profileError);
+                }
+
+                // Get purchase history safely
+                let purchases = [];
+                try {
+                    const { data: purchasesData, error: purchasesError } = await window.supabase
+                        .from('purchases')
+                        .select(`
+                            *,
+                            products (title, sku)
+                        `)
+                        .eq('user_id', user.id)
+                        .order('created_at', { ascending: false });
+
+                    if (!purchasesError) {
+                        purchases = purchasesData || [];
+                    }
+                } catch (purchasesError) {
+                    console.warn('Could not load purchase history:', purchasesError);
+                }
+
+                // Safely get user information with fallbacks
+                const userName = profile?.full_name || 
+                               user.user_metadata?.full_name || 
+                               user.user_metadata?.user_name || 
+                               user.email?.split('@')[0] || 
+                               'User';
+                
+                const userEmail = user.email || 'No email provided';
+                const company = profile?.company || 'Astronub Limited';
                 const avatarInitial = userName.charAt(0).toUpperCase();
 
+                // Format dates safely
                 const formatDate = (dateString) => {
                     if (!dateString) return 'Unknown';
-                    return new Date(dateString).toLocaleDateString();
+                    try {
+                        return new Date(dateString).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                    } catch (e) {
+                        console.warn('Date formatting error:', e);
+                        return 'Invalid date';
+                    }
                 };
 
+                // Format user ID safely
+                const formatUserId = (userId) => {
+                    if (!userId) return 'Unknown';
+                    try {
+                        return userId.toString().trim();
+                    } catch (e) {
+                        return 'Invalid ID';
+                    }
+                };
+
+                console.log('Rendering profile...');
                 profileContent.innerHTML = `
                     <div class="profile-card">
                         <div class="profile-header">
@@ -273,7 +359,7 @@
                         <div class="profile-details">
                             <div class="detail-item">
                                 <span class="detail-label">User ID:</span>
-                                <span class="detail-value user-id">${user.id.substring(0, 8)}...</span>
+                                <span class="detail-value user-id">${formatUserId(user.id)}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Email Verified:</span>
@@ -287,60 +373,64 @@
                                 <span class="detail-label">Last Sign In:</span>
                                 <span class="detail-value">${formatDate(user.last_sign_in_at)}</span>
                             </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Authentication Provider:</span>
+                                <span class="detail-value">${user.app_metadata?.provider || 'GitHub'}</span>
+                            </div>
                         </div>
 
                         <div class="purchase-history">
-                            <h2 style="margin-bottom: 1rem;">Purchase History</h2>
-                            ${purchases && purchases.length > 0 ? 
+                            <h2 style="margin-bottom: 1rem; color: #333;">Purchase History</h2>
+                            ${purchases.length > 0 ? 
                                 purchases.map(purchase => `
                                     <div class="purchase-item">
                                         <strong>${purchase.products?.title || 'Product'}</strong><br>
                                         <span>SKU: ${purchase.product_sku}</span><br>
-                                        <span>Amount: $${purchase.amount}</span><br>
+                                        <span>Amount: $${purchase.amount || '0.00'}</span><br>
                                         <span>Date: ${formatDate(purchase.created_at)}</span>
+                                        <span style="display: block; margin-top: 0.5rem; padding: 0.25rem 0.5rem; background: #e9ecef; border-radius: 3px; font-size: 0.8rem;">
+                                            Status: ${purchase.status || 'completed'}
+                                        </span>
                                     </div>
                                 `).join('') : 
-                                '<div class="no-purchases">No purchases yet. <a href="/samplepagetwo/products.html">Browse products</a></div>'
+                                '<div class="no-purchases">No purchases yet. <a href="/samplepagetwo/products.html" style="color: #007bff;">Browse products</a></div>'
                             }
                         </div>
                     </div>
                 `;
 
+                console.log('Profile loaded successfully');
+
             } catch (error) {
                 console.error('Error loading profile:', error);
                 
-                if (error.message.includes('Please log in')) {
-                    profileContent.innerHTML = `
-                        <div class="login-prompt">
-                            <h2>Welcome to AstroMub Store</h2>
-                            <p>Please log in to access your profile and purchase history.</p>
-                            <a href="#" id="profile-login-btn" class="btn btn-login">Login with GitHub</a>
+                profileContent.innerHTML = `
+                    <div class="error">
+                        <h2>Error Loading Profile</h2>
+                        <p>${error.message || 'An unexpected error occurred'}</p>
+                        <div style="margin-top: 1rem;">
+                            <button onclick="location.reload()" class="btn">Try Again</button>
+                            <a href="/samplepagetwo/" class="btn btn-secondary">Return to Home</a>
                         </div>
-                    `;
-                    
-                    document.getElementById('profile-login-btn')?.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        await window.authUtils.handleLogin();
-                    });
-                } else {
-                    profileContent.innerHTML = `
-                        <div class="error">
-                            <h2>Error Loading Profile</h2>
-                            <p>${error.message}</p>
-                            <button onclick="location.reload()" class="btn" style="margin-top: 1rem;">Try Again</button>
-                        </div>
-                    `;
-                }
+                    </div>
+                `;
             }
         }
 
+        // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(loadProfile, 300);
+            console.log('DOM loaded, initializing profile...');
+            
+            // Wait a bit longer to ensure auth.js is fully loaded
+            setTimeout(() => {
+                loadProfile();
+            }, 500);
         });
 
-        // Listen for auth changes
+        // Listen for auth state changes
         if (window.supabase) {
-            window.supabase.auth.onAuthStateChange((event) => {
+            window.supabase.auth.onAuthStateChange((event, session) => {
+                console.log('Auth state changed in profile:', event);
                 if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
                     loadProfile();
                 }
