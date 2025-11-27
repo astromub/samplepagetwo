@@ -44,7 +44,7 @@ async function handleLogout() {
     }
 }
 
-// Handle user login
+// Handle user login - FIXED: Minimal GitHub permissions
 async function handleLogin() {
     setAuthLoading(true);
     try {
@@ -52,7 +52,8 @@ async function handleLogin() {
             provider: 'github',
             options: { 
                 redirectTo: getRedirectUrl(),
-                scopes: 'read:user'
+                // Minimal scopes - only what we actually need
+                scopes: 'user:email'
             }
         });
         if (error) throw error;
@@ -75,10 +76,16 @@ function updateAuthUI(session) {
                         'User';
         
         userNav.innerHTML = `
-            <span class="welcome-text">Welcome, ${userName}</span>
-            <a href="/samplepagetwo/profile.html" class="nav-link">Profile</a>
-            <a href="/samplepagetwo/products.html" class="nav-link">Products</a>
-            <a href="#" id="logout-btn" class="nav-link logout-btn">Logout</a>
+            <span class="welcome-text">👋 Welcome, ${userName}</span>
+            <a href="/samplepagetwo/profile.html" class="nav-link">📱 Profile</a>
+            <a href="/samplepagetwo/products.html" class="nav-link">🛍️ Products</a>
+            <div style="position: relative;">
+                <a href="/samplepagetwo/cart.html" class="nav-link">
+                    🛒 Cart 
+                    <span class="cart-count">${window.cart?.getTotalItems() || 0}</span>
+                </a>
+            </div>
+            <a href="#" id="logout-btn" class="nav-link logout-btn">🚪 Logout</a>
         `;
         
         // Remove existing event listeners and add new one
@@ -91,8 +98,9 @@ function updateAuthUI(session) {
         
     } else {
         userNav.innerHTML = `
-            <a href="#" id="login-btn" class="nav-link login-btn">Login with GitHub</a>
-            <a href="/samplepagetwo/products.html" class="nav-link">Products</a>
+            <a href="#" id="login-btn" class="nav-link login-btn">🔐 Login with GitHub</a>
+            <a href="/samplepagetwo/products.html" class="nav-link">🛍️ Products</a>
+            <a href="/samplepagetwo/cart.html" class="nav-link">🛒 Cart</a>
         `;
         
         // Remove existing event listeners and add new one
@@ -205,49 +213,175 @@ const authStyles = `
     color: #333;
     font-weight: 500;
     margin-right: 15px;
+    font-size: 14px;
 }
 
 .nav-link {
     color: #007bff;
     text-decoration: none;
     margin: 0 8px;
-    padding: 6px 12px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s;
     font-size: 14px;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .nav-link:hover {
     background-color: #f8f9fa;
+    border-color: #007bff;
+    transform: translateY(-1px);
 }
 
 .logout-btn {
     color: #dc3545;
+    border-color: #dc3545;
+}
+
+.logout-btn:hover {
+    background-color: #fff5f5;
 }
 
 .login-btn {
     color: #28a745;
+    border-color: #28a745;
     font-weight: 500;
+}
+
+.login-btn:hover {
+    background-color: #f8fff9;
 }
 
 #user-nav {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
+}
+
+.cart-count {
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    position: relative;
+    top: -8px;
+    right: -2px;
 }
 
 @media (max-width: 768px) {
     #user-nav {
         flex-direction: column;
         align-items: flex-start;
-        gap: 5px;
+        gap: 8px;
     }
     
     .welcome-text {
         margin-right: 0;
         margin-bottom: 5px;
+        font-size: 13px;
     }
+    
+    .nav-link {
+        margin: 2px 0;
+        font-size: 13px;
+        padding: 6px 10px;
+    }
+}
+
+/* Fix for broken layout */
+.hero-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.hero-text {
+    max-width: 600px;
+    margin-bottom: 2rem;
+}
+
+.eyebrow {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+}
+
+.hero-text h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.bio {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    width: 100%;
+    max-width: 1000px;
+}
+
+.product-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.product-card img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+}
+
+.btn-product {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #007bff;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.gallery-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 2rem 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.gallery-section img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
 }
 </style>
 `;
