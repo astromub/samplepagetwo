@@ -1,7 +1,4 @@
----
-layout: default
-title: My Profile - ASTROMub
----
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -39,30 +36,8 @@ title: My Profile - ASTROMub
             text-decoration: none;
         }
 
-        #user-nav {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .nav-link {
-            color: #007bff;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-
-        .nav-link:hover {
-            background-color: #f8f9fa;
-        }
-
-        .logout-btn {
-            color: #dc3545;
-        }
-
         .profile-container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 2rem auto;
             padding: 0 2rem;
         }
@@ -72,6 +47,7 @@ title: My Profile - ASTROMub
             border-radius: 8px;
             padding: 2rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
         }
 
         .profile-header {
@@ -93,26 +69,17 @@ title: My Profile - ASTROMub
             font-size: 2.5rem;
             font-weight: bold;
             margin: 0 auto 1rem;
-            box-shadow: 0 4px 8px rgba(0,123,255,0.3);
         }
 
         .profile-name {
             font-size: 1.8rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
-            color: #333;
         }
 
         .profile-email {
             color: #666;
             font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .profile-company {
-            color: #007bff;
-            font-weight: 500;
-            font-size: 1rem;
         }
 
         .profile-details {
@@ -127,7 +94,6 @@ title: My Profile - ASTROMub
             padding: 1rem;
             background: #f8f9fa;
             border-radius: 6px;
-            border-left: 4px solid #007bff;
         }
 
         .detail-label {
@@ -137,7 +103,6 @@ title: My Profile - ASTROMub
 
         .detail-value {
             font-weight: 500;
-            color: #333;
         }
 
         .user-id {
@@ -146,28 +111,20 @@ title: My Profile - ASTROMub
             background: #e9ecef;
             padding: 0.25rem 0.5rem;
             border-radius: 3px;
-            word-break: break-all;
         }
 
-        .loading {
+        .loading, .error, .login-prompt {
             text-align: center;
             padding: 3rem;
-            color: #666;
         }
 
         .error {
-            text-align: center;
-            padding: 2rem;
             color: #dc3545;
             background: #f8d7da;
             border-radius: 8px;
-            margin: 2rem 0;
-            border: 1px solid #f5c6cb;
         }
 
         .login-prompt {
-            text-align: center;
-            padding: 3rem;
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -183,60 +140,39 @@ title: My Profile - ASTROMub
             border: none;
             cursor: pointer;
             font-size: 1rem;
-            font-weight: 500;
             transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,123,255,0.3);
         }
 
         .btn:hover {
             background: #0056b3;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,123,255,0.4);
         }
 
         .btn-login {
             background: #28a745;
-            box-shadow: 0 2px 4px rgba(40,167,69,0.3);
         }
 
         .btn-login:hover {
             background: #218838;
-            box-shadow: 0 4px 8px rgba(40,167,69,0.4);
         }
 
-        .provider-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: #6f42c1;
-            color: white;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            text-transform: capitalize;
+        .purchase-history {
+            margin-top: 2rem;
         }
 
-        .verified-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: #28a745;
-            color: white;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-left: 0.5rem;
-        }
-
-        .profile-section {
-            margin-bottom: 2rem;
-        }
-
-        .section-title {
-            font-size: 1.3rem;
-            font-weight: 600;
+        .purchase-item {
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
             margin-bottom: 1rem;
-            color: #333;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #007bff;
+            background: #fafafa;
+        }
+
+        .no-purchases {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 6px;
         }
     </style>
 </head>
@@ -282,78 +218,47 @@ title: My Profile - ASTROMub
             const profileContent = document.getElementById('profile-content');
             
             try {
-                // Wait a bit to ensure auth.js is fully loaded
                 if (!window.supabase) {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
 
                 if (!window.supabase) {
-                    throw new Error('Authentication service is not available. Please refresh the page.');
+                    throw new Error('Authentication service is not available');
                 }
 
                 const { data: { session }, error } = await window.supabase.auth.getSession();
                 
-                if (error) {
-                    throw new Error('Authentication error: ' + error.message);
-                }
+                if (error) throw new Error('Authentication error: ' + error.message);
+                if (!session) throw new Error('Please log in to view your profile');
 
-                if (!session) {
-                    profileContent.innerHTML = `
-                        <div class="login-prompt">
-                            <h2>Welcome to AstroMub Store</h2>
-                            <p>Please log in to access your profile and manage your account.</p>
-                            <a href="#" id="profile-login-btn" class="btn btn-login">Login with GitHub</a>
-                        </div>
-                    `;
-                    
-                    document.getElementById('profile-login-btn')?.addEventListener('click', async (e) => {
-                        e.preventDefault();
-                        const { error } = await window.supabase.auth.signInWithOAuth({
-                            provider: 'github',
-                            options: { 
-                                redirectTo: window.location.origin + '/samplepagetwo/login-callback.html'
-                            }
-                        });
-                        if (error) {
-                            console.error('Login error:', error);
-                            alert('Login failed. Please try again.');
-                        }
-                    });
-                    return;
-                }
+                // Get user with profile data
+                const userData = await window.authUtils.getCurrentUser();
+                if (!userData) throw new Error('Failed to load user data');
 
-                // User is logged in - display profile
-                const user = session.user;
-                console.log('User data:', user); // Debug log
+                const { user, profile } = userData;
                 
-                const userName = user.user_metadata?.full_name || 
-                               user.user_metadata?.user_name || 
-                               user.email?.split('@')[0] || 
-                               'User';
-                const userEmail = user.email || 'No email provided';
-                const company = user.user_metadata?.company || 'Astronub Limited';
+                // Get purchase history
+                const { data: purchases, error: purchaseError } = await window.supabase
+                    .from('purchases')
+                    .select(`
+                        *,
+                        products (*)
+                    `)
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+
+                if (purchaseError) {
+                    console.error('Error loading purchases:', purchaseError);
+                }
+
+                const userName = profile.full_name || user.user_metadata?.full_name || user.email.split('@')[0];
+                const userEmail = user.email;
+                const company = profile.company || 'Astronub Limited';
                 const avatarInitial = userName.charAt(0).toUpperCase();
-                const provider = user.app_metadata?.provider || 'github';
-                
-                // Format dates safely
+
                 const formatDate = (dateString) => {
                     if (!dateString) return 'Unknown';
-                    try {
-                        return new Date(dateString).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        });
-                    } catch (e) {
-                        return 'Invalid date';
-                    }
-                };
-
-                // Format user ID safely (fix the display issue)
-                const formatUserId = (userId) => {
-                    if (!userId) return 'Unknown';
-                    // Ensure it's a string and remove any extra characters that might have been added
-                    return userId.toString().trim();
+                    return new Date(dateString).toLocaleDateString();
                 };
 
                 profileContent.innerHTML = `
@@ -362,78 +267,80 @@ title: My Profile - ASTROMub
                             <div class="profile-avatar">${avatarInitial}</div>
                             <h1 class="profile-name">${userName}</h1>
                             <p class="profile-email">${userEmail}</p>
-                            <p class="profile-company">${company}</p>
+                            <p style="color: #007bff; margin-top: 0.5rem;">${company}</p>
                         </div>
                         
-                        <div class="profile-section">
-                            <h2 class="section-title">Account Information</h2>
-                            <div class="profile-details">
-                                <div class="detail-item">
-                                    <span class="detail-label">User ID:</span>
-                                    <span class="detail-value user-id">${formatUserId(user.id)}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Email Verified:</span>
-                                    <span class="detail-value">
-                                        ${user.email_confirmed_at ? 'Yes' : 'No'}
-                                        ${user.email_confirmed_at ? '<span class="verified-badge">Verified</span>' : ''}
-                                    </span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Account Created:</span>
-                                    <span class="detail-value">${formatDate(user.created_at)}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Last Sign In:</span>
-                                    <span class="detail-value">${formatDate(user.last_sign_in_at)}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Authentication Provider:</span>
-                                    <span class="detail-value">
-                                        <span class="provider-badge">${provider}</span>
-                                    </span>
-                                </div>
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <span class="detail-label">User ID:</span>
+                                <span class="detail-value user-id">${user.id.substring(0, 8)}...</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Email Verified:</span>
+                                <span class="detail-value">${user.email_confirmed_at ? 'Yes' : 'No'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Account Created:</span>
+                                <span class="detail-value">${formatDate(user.created_at)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Last Sign In:</span>
+                                <span class="detail-value">${formatDate(user.last_sign_in_at)}</span>
                             </div>
                         </div>
 
-                        <div class="profile-section">
-                            <h2 class="section-title">About AstroMub Store</h2>
-                            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 6px; border-left: 4px solid #28a745;">
-                                <h3 style="margin-bottom: 1rem; color: #333;">Designing With Passion While Exploring The World.</h3>
-                                <p style="margin-bottom: 1rem; color: #666;"><strong>Any Type Of Query & Discussion.</strong></p>
-                                <p style="color: #666;">Let's chat about your Business Web Design needs and how we can help your business grow.</p>
-                            </div>
+                        <div class="purchase-history">
+                            <h2 style="margin-bottom: 1rem;">Purchase History</h2>
+                            ${purchases && purchases.length > 0 ? 
+                                purchases.map(purchase => `
+                                    <div class="purchase-item">
+                                        <strong>${purchase.products?.title || 'Product'}</strong><br>
+                                        <span>SKU: ${purchase.product_sku}</span><br>
+                                        <span>Amount: $${purchase.amount}</span><br>
+                                        <span>Date: ${formatDate(purchase.created_at)}</span>
+                                    </div>
+                                `).join('') : 
+                                '<div class="no-purchases">No purchases yet. <a href="/samplepagetwo/products.html">Browse products</a></div>'
+                            }
                         </div>
                     </div>
                 `;
 
             } catch (error) {
                 console.error('Error loading profile:', error);
-                profileContent.innerHTML = `
-                    <div class="error">
-                        <h2>Error Loading Profile</h2>
-                        <p>${error.message}</p>
-                        <div style="margin-top: 1rem;">
-                            <a href="/samplepagetwo/" class="btn" style="margin-right: 1rem;">Return to Home</a>
-                            <button onclick="location.reload()" class="btn" style="background: #6c757d;">Try Again</button>
+                
+                if (error.message.includes('Please log in')) {
+                    profileContent.innerHTML = `
+                        <div class="login-prompt">
+                            <h2>Welcome to AstroMub Store</h2>
+                            <p>Please log in to access your profile and purchase history.</p>
+                            <a href="#" id="profile-login-btn" class="btn btn-login">Login with GitHub</a>
                         </div>
-                    </div>
-                `;
+                    `;
+                    
+                    document.getElementById('profile-login-btn')?.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        await window.authUtils.handleLogin();
+                    });
+                } else {
+                    profileContent.innerHTML = `
+                        <div class="error">
+                            <h2>Error Loading Profile</h2>
+                            <p>${error.message}</p>
+                            <button onclick="location.reload()" class="btn" style="margin-top: 1rem;">Try Again</button>
+                        </div>
+                    `;
+                }
             }
         }
 
-        // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for auth.js to initialize
-            setTimeout(() => {
-                loadProfile();
-            }, 300);
+            setTimeout(loadProfile, 300);
         });
 
-        // Listen for auth state changes
+        // Listen for auth changes
         if (window.supabase) {
-            window.supabase.auth.onAuthStateChange((event, session) => {
-                console.log('Auth state changed in profile:', event);
+            window.supabase.auth.onAuthStateChange((event) => {
                 if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
                     loadProfile();
                 }
