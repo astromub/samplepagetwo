@@ -1,92 +1,113 @@
 const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
 
-// ================== FIX: Define signUp FIRST to prevent "undefined" error ==================
-window.signUp = async function(userData) {
-    console.log('signUp function called with:', userData);
-    
-    // Validate input
-    if (!userData || !userData.email || !userData.password || !userData.fullName) {
-        throw new Error('Please fill in all required fields');
-    }
-    
-    if (userData.password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
-    }
-    
-    try {
-        // Make sure supabase is initialized
-        if (!window.supabase) {
-            await initializeSupabase();
-        }
-        
-        // Create user in Supabase Auth
-        const { data, error } = await window.supabase.auth.signUp({
-            email: userData.email,
-            password: userData.password,
-            options: {
-                data: {
-                    full_name: userData.fullName,
-                    user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
-                }
-            }
-        });
-        
-        if (error) throw error;
-        
-        if (data.user) {
-            // Create profile in profiles table
-            try {
-                const { error: profileError } = await window.supabase
-                    .from('profiles')
-                    .insert({
-                        id: data.user.id,
-                        username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
-                        full_name: userData.fullName,
-                        company: 'Astronub Limited'
-                    });
-                
-                if (profileError) {
-                    console.warn('Profile creation warning:', profileError);
-                }
-            } catch (profileError) {
-                console.warn('Could not create profile:', profileError);
+// ================== IMMEDIATE INITIALIZATION ==================
+// Define signUp function IMMEDIATELY to prevent any "undefined" errors
+(function() {
+    // Create a robust signUp function
+    const createSignUpFunction = function() {
+        return async function(userData) {
+            console.log('🔐 signUp function called with:', userData);
+            
+            // Validate input
+            if (!userData || !userData.email || !userData.password || !userData.fullName) {
+                throw new Error('Please fill in all required fields');
             }
             
-            return {
-                success: true,
-                message: 'Account created successfully! Please check your email to verify your account.',
-                user: data.user
-            };
-        }
-        
-        throw new Error('Account creation failed');
-        
-    } catch (error) {
-        console.error('Signup error:', error);
-        return {
-            success: false,
-            message: error.message || 'Signup failed. Please try again.'
+            if (userData.password.length < 6) {
+                throw new Error('Password must be at least 6 characters long');
+            }
+            
+            try {
+                // Make sure supabase is initialized
+                if (!window.supabase) {
+                    console.log('Initializing Supabase...');
+                    window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
+                
+                // Create user in Supabase Auth
+                const { data, error } = await window.supabase.auth.signUp({
+                    email: userData.email,
+                    password: userData.password,
+                    options: {
+                        data: {
+                            full_name: userData.fullName,
+                            user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
+                        }
+                    }
+                });
+                
+                if (error) throw error;
+                
+                if (data.user) {
+                    // Create profile in profiles table
+                    try {
+                        const { error: profileError } = await window.supabase
+                            .from('profiles')
+                            .insert({
+                                id: data.user.id,
+                                username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
+                                full_name: userData.fullName,
+                                company: 'Astronub Limited'
+                            });
+                        
+                        if (profileError) {
+                            console.warn('Profile creation warning:', profileError);
+                        }
+                    } catch (profileError) {
+                        console.warn('Could not create profile:', profileError);
+                    }
+                    
+                    return {
+                        success: true,
+                        message: 'Account created successfully! Please check your email to verify your account.',
+                        user: data.user
+                    };
+                }
+                
+                throw new Error('Account creation failed');
+                
+            } catch (error) {
+                console.error('Signup error:', error);
+                return {
+                    success: false,
+                    message: error.message || 'Signup failed. Please try again.'
+                };
+            }
         };
-    }
-};
+    };
+    
+    // Set up the function in multiple places for redundancy
+    const signUpFn = createSignUpFunction();
+    
+    // 1. Global window.signUp
+    window.signUp = signUpFn;
+    
+    // 2. Backup in case something overwrites it
+    window._astroMubSignUp = signUpFn;
+    
+    // 3. Self-healing: Check and restore if overwritten
+    setInterval(() => {
+        if (typeof window.signUp !== 'function') {
+            console.warn('signUp was overwritten, restoring...');
+            window.signUp = signUpFn;
+        }
+    }, 1000);
+    
+    console.log('✅ signUp function DEFINED and protected');
+})();
 
-// Initialize Supabase
-async function initializeSupabase() {
+// Initialize Supabase immediately
+(function() {
     if (!window.supabase) {
         try {
             window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             console.log('Supabase client initialized');
         } catch (error) {
             console.error('Failed to initialize Supabase client:', error);
-            throw new Error('Authentication service is not available');
         }
     }
-    return window.supabase;
-}
-
-// Initialize immediately
-initializeSupabase();
+})();
 
 // ================== REST OF THE AUTH.JS FILE ==================
 
@@ -307,7 +328,7 @@ async function handleEmailLogin(e) {
     }
 }
 
-// Handle email signup
+// Handle email signup (for modal)
 async function handleEmailSignup(e) {
     e.preventDefault();
     
@@ -332,37 +353,18 @@ async function handleEmailSignup(e) {
     submitBtn.disabled = true;
     
     try {
-        // Create user in Supabase Auth
-        const { data, error } = await window.supabase.auth.signUp({
+        // Use the global signUp function
+        const result = await window.signUp({
+            fullName: name,
             email: email,
-            password: password,
-            options: {
-                data: {
-                    full_name: name,
-                    user_name: name.toLowerCase().replace(/\s+/g, '_')
-                }
-            }
+            password: password
         });
         
-        if (error) throw error;
-        
-        if (data.user) {
-            // Create profile in profiles table
-            const { error: profileError } = await window.supabase
-                .from('profiles')
-                .insert({
-                    id: data.user.id,
-                    username: name.toLowerCase().replace(/\s+/g, '_'),
-                    full_name: name,
-                    company: 'Astronub Limited'
-                });
-            
-            if (profileError) {
-                console.warn('Profile creation warning:', profileError);
-            }
-            
+        if (result && result.success) {
             closeSignupModal();
-            alert('Account created successfully! Please check your email to verify your account.');
+            alert(result.message);
+        } else {
+            throw new Error(result?.message || 'Signup failed');
         }
         
     } catch (error) {
@@ -543,6 +545,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ================== SPECIAL HANDLING FOR SIGN.HTML ==================
+// Check if we're on the sign.html page and help it
+(function() {
+    // Check if this is a signup page by URL or form
+    const isSignupPage = window.location.pathname.includes('sign.html') || 
+                        document.getElementById('signupForm') ||
+                        document.querySelector('input[placeholder*="Keno Kata"]');
+    
+    if (isSignupPage) {
+        console.log('📝 Detected signup page, ensuring signUp is available');
+        
+        // Double-check signUp exists
+        if (typeof window.signUp !== 'function') {
+            console.error('🚨 EMERGENCY: signUp missing on signup page!');
+            
+            // Create emergency fallback
+            window.signUp = window._astroMubSignUp || async function(userData) {
+                console.log('🆘 Using emergency signUp');
+                return {
+                    success: false,
+                    message: 'Authentication service is temporarily unavailable. Please try again later.'
+                };
+            };
+        }
+        
+        // Notify the page that auth.js is ready
+        window.dispatchEvent(new CustomEvent('authReady', {
+            detail: { signUpAvailable: true }
+        }));
+    }
+})();
+
 // Export functions for use in other scripts
 window.authUtils = {
     getCurrentUser: getCurrentUserWithProfile,
@@ -554,9 +588,24 @@ window.authUtils = {
     closeLoginModal,
     closeSignupModal,
     loginWithGitHub,
-    signUp: window.signUp,
+    signUp: window.signUp, // Use the global function
     handleEmailLogin,
-    handleEmailSignup
+    handleEmailSignup,
+    // Special helper for sign.html
+    ensureSignUpReady: function() {
+        return new Promise((resolve) => {
+            if (typeof window.signUp === 'function') {
+                resolve(true);
+            } else {
+                const check = setInterval(() => {
+                    if (typeof window.signUp === 'function') {
+                        clearInterval(check);
+                        resolve(true);
+                    }
+                }, 100);
+            }
+        });
+    }
 };
 
 // Add basic CSS for auth elements
@@ -632,6 +681,16 @@ input:focus {
     border-color: #007bff !important;
 }
 
+/* Special styles for sign.html */
+#signupForm {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 768px) {
     #user-nav {
         flex-direction: column;
@@ -656,5 +715,6 @@ input:focus {
 
 document.head.insertAdjacentHTML('beforeend', authStyles);
 
-// Log that auth.js is loaded
-console.log('auth.js loaded successfully - signUp function is available:', typeof window.signUp === 'function');
+// Final log
+console.log('✅ auth.js COMPLETELY LOADED - signUp is DEFINED:', typeof window.signUp === 'function');
+console.log('📁 Current page:', window.location.pathname);
