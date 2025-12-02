@@ -1,15 +1,94 @@
 const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
 
-// Global Supabase initialization
-if (!window.supabase) {
-    try {
-        window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('Supabase client initialized globally');
-    } catch (error) {
-        console.error('Failed to initialize Supabase client:', error);
+// ================== FIX: Define signUp FIRST to prevent "undefined" error ==================
+window.signUp = async function(userData) {
+    console.log('signUp function called with:', userData);
+    
+    // Validate input
+    if (!userData || !userData.email || !userData.password || !userData.fullName) {
+        throw new Error('Please fill in all required fields');
     }
+    
+    if (userData.password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+    }
+    
+    try {
+        // Make sure supabase is initialized
+        if (!window.supabase) {
+            await initializeSupabase();
+        }
+        
+        // Create user in Supabase Auth
+        const { data, error } = await window.supabase.auth.signUp({
+            email: userData.email,
+            password: userData.password,
+            options: {
+                data: {
+                    full_name: userData.fullName,
+                    user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
+                }
+            }
+        });
+        
+        if (error) throw error;
+        
+        if (data.user) {
+            // Create profile in profiles table
+            try {
+                const { error: profileError } = await window.supabase
+                    .from('profiles')
+                    .insert({
+                        id: data.user.id,
+                        username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
+                        full_name: userData.fullName,
+                        company: 'Astronub Limited'
+                    });
+                
+                if (profileError) {
+                    console.warn('Profile creation warning:', profileError);
+                }
+            } catch (profileError) {
+                console.warn('Could not create profile:', profileError);
+            }
+            
+            return {
+                success: true,
+                message: 'Account created successfully! Please check your email to verify your account.',
+                user: data.user
+            };
+        }
+        
+        throw new Error('Account creation failed');
+        
+    } catch (error) {
+        console.error('Signup error:', error);
+        return {
+            success: false,
+            message: error.message || 'Signup failed. Please try again.'
+        };
+    }
+};
+
+// Initialize Supabase
+async function initializeSupabase() {
+    if (!window.supabase) {
+        try {
+            window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Supabase client initialized');
+        } catch (error) {
+            console.error('Failed to initialize Supabase client:', error);
+            throw new Error('Authentication service is not available');
+        }
+    }
+    return window.supabase;
 }
+
+// Initialize immediately
+initializeSupabase();
+
+// ================== REST OF THE AUTH.JS FILE ==================
 
 // Auth state management
 let authInitialized = false;
@@ -228,7 +307,7 @@ async function handleEmailLogin(e) {
     }
 }
 
-// FIXED: Handle email signup - This is the missing function!
+// Handle email signup
 async function handleEmailSignup(e) {
     e.preventDefault();
     
@@ -312,70 +391,6 @@ async function loginWithGitHub() {
         console.error('GitHub login error:', error);
         alert('GitHub login failed. Please try again.');
         setAuthLoading(false);
-    }
-}
-
-// FIXED: Add the missing signUp function that the error references
-async function signUp(userData) {
-    console.log('signUp function called with:', userData);
-    
-    // Validate input
-    if (!userData.fullName || !userData.email || !userData.password) {
-        throw new Error('Please fill in all fields');
-    }
-    
-    if (userData.password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
-    }
-    
-    try {
-        // Create user in Supabase Auth
-        const { data, error } = await window.supabase.auth.signUp({
-            email: userData.email,
-            password: userData.password,
-            options: {
-                data: {
-                    full_name: userData.fullName,
-                    user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
-                }
-            }
-        });
-        
-        if (error) throw error;
-        
-        if (data.user) {
-            // Create profile in profiles table
-            const { error: profileError } = await window.supabase
-                .from('profiles')
-                .insert({
-                    id: data.user.id,
-                    username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
-                    full_name: userData.fullName,
-                    company: 'Astronub Limited'
-                });
-            
-            if (profileError) {
-                console.warn('Profile creation warning:', profileError);
-            }
-            
-            return {
-                success: true,
-                message: 'Account created successfully! Please check your email to verify your account.',
-                user: data.user
-            };
-        }
-        
-        return {
-            success: false,
-            message: 'Account creation failed. Please try again.'
-        };
-        
-    } catch (error) {
-        console.error('Signup error in signUp function:', error);
-        return {
-            success: false,
-            message: error.message || 'Signup failed. Please try again.'
-        };
     }
 }
 
@@ -539,13 +554,10 @@ window.authUtils = {
     closeLoginModal,
     closeSignupModal,
     loginWithGitHub,
-    signUp: signUp, // ADDED: Export the signUp function
-    handleEmailLogin: handleEmailLogin,
-    handleEmailSignup: handleEmailSignup
+    signUp: window.signUp,
+    handleEmailLogin,
+    handleEmailSignup
 };
-
-// Make signUp function globally available
-window.signUp = signUp; // ADDED: This fixes the "signUp is undefined" error
 
 // Add basic CSS for auth elements
 const authStyles = `
@@ -643,3 +655,6 @@ input:focus {
 `;
 
 document.head.insertAdjacentHTML('beforeend', authStyles);
+
+// Log that auth.js is loaded
+console.log('auth.js loaded successfully - signUp function is available:', typeof window.signUp === 'function');
