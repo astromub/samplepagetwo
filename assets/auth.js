@@ -228,7 +228,7 @@ async function handleEmailLogin(e) {
     }
 }
 
-// Handle email signup
+// FIXED: Handle email signup - This is the missing function!
 async function handleEmailSignup(e) {
     e.preventDefault();
     
@@ -312,6 +312,70 @@ async function loginWithGitHub() {
         console.error('GitHub login error:', error);
         alert('GitHub login failed. Please try again.');
         setAuthLoading(false);
+    }
+}
+
+// FIXED: Add the missing signUp function that the error references
+async function signUp(userData) {
+    console.log('signUp function called with:', userData);
+    
+    // Validate input
+    if (!userData.fullName || !userData.email || !userData.password) {
+        throw new Error('Please fill in all fields');
+    }
+    
+    if (userData.password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+    }
+    
+    try {
+        // Create user in Supabase Auth
+        const { data, error } = await window.supabase.auth.signUp({
+            email: userData.email,
+            password: userData.password,
+            options: {
+                data: {
+                    full_name: userData.fullName,
+                    user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
+                }
+            }
+        });
+        
+        if (error) throw error;
+        
+        if (data.user) {
+            // Create profile in profiles table
+            const { error: profileError } = await window.supabase
+                .from('profiles')
+                .insert({
+                    id: data.user.id,
+                    username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
+                    full_name: userData.fullName,
+                    company: 'Astronub Limited'
+                });
+            
+            if (profileError) {
+                console.warn('Profile creation warning:', profileError);
+            }
+            
+            return {
+                success: true,
+                message: 'Account created successfully! Please check your email to verify your account.',
+                user: data.user
+            };
+        }
+        
+        return {
+            success: false,
+            message: 'Account creation failed. Please try again.'
+        };
+        
+    } catch (error) {
+        console.error('Signup error in signUp function:', error);
+        return {
+            success: false,
+            message: error.message || 'Signup failed. Please try again.'
+        };
     }
 }
 
@@ -474,8 +538,14 @@ window.authUtils = {
     showSignupModal,
     closeLoginModal,
     closeSignupModal,
-    loginWithGitHub
+    loginWithGitHub,
+    signUp: signUp, // ADDED: Export the signUp function
+    handleEmailLogin: handleEmailLogin,
+    handleEmailSignup: handleEmailSignup
 };
+
+// Make signUp function globally available
+window.signUp = signUp; // ADDED: This fixes the "signUp is undefined" error
 
 // Add basic CSS for auth elements
 const authStyles = `
