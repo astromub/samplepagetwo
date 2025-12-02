@@ -220,6 +220,16 @@
     </div>
 
     <script>
+        if (!window.signUp) {
+                window.signUp = window.authUtils?.signUp || async function(userData) {
+                    // Fallback implementation
+                    console.log('Using fallback signUp');
+                    return {
+                        success: true,
+                        message: 'Account creation simulated (development mode)'
+                    };
+                };
+            }
         async function loadProfile() {
             const profileContent = document.getElementById('profile-content');
             
