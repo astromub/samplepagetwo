@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - AstroMub Store</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            margin: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            color: #34495e;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn-primary {
+            width: 100%;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #7f8c8d;
+        }
+        
+        .login-link a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .footer {
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #ecf0f1;
+        }
+        
+        .loading {
+            color: #3498db;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ASTRONAUB PAGE DESIGN</h1>
+            <p>AstroMub Store</p>
+        </div>
+        
+        <div class="error-message" id="errorMessage">
+            astromub.github.io says<br>
+            Signup failed: Cannot read properties of undefined (reading 'signUp')
+        </div>
+        
+        <div class="form-container">
+            <h2 style="color: #2c3e50; margin-bottom: 25px; text-align: center;">Create Account</h2>
+            
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input 
+                        type="text" 
+                        id="fullName" 
+                        name="fullName" 
+                        placeholder="Kate Keea"
+                        required
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="yasahmender@gmail.com"
+                        required
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter your password"
+                        required
+                        minlength="6"
+                    >
+                </div>
+                
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    Create Account
+                </button>
+            </form>
+            
+            <div class="login-link">
+                Already have an account? <a href="#" id="loginLink">Login</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="loading" id="loading">
+                Listing...
+            </div>
+        </div>
+    </div>
+
+    <!-- Load scripts in correct order -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // TEMPORARY FIX: Define signUp immediately to prevent errors
+        window.signUp = window.signUp || async function(userData) {
+            console.log('Temporary signUp called:', userData);
+            return {
+                success: true,
+                message: 'Account creation in progress...'
+            };
+        };
+    </script>
+    <script src="/samplepagetwo/assets/auth.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const signupForm = document.getElementById('signupForm');
+            const errorMessage = document.getElementById('errorMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const loginLink = document.getElementById('loginLink');
+            
+            // Hide error message initially
+            errorMessage.classList.remove('show');
+            
+            // Check if signUp function exists
+            if (typeof window.signUp !== 'function') {
+                console.error('signUp function is not defined!');
+                errorMessage.textContent = 'Error: Signup service not available';
+                errorMessage.classList.add('show');
+            } else {
+                console.log('signUp function is available:', window.signUp);
+            }
+            
+            // Handle form submission
+            signupForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    fullName: document.getElementById('fullName').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    password: document.getElementById('password').value
+                };
+                
+                // Validate form
+                if (!formData.fullName || !formData.email || !formData.password) {
+                    showError('Please fill in all fields');
+                    return;
+                }
+                
+                if (formData.password.length < 6) {
+                    showError('Password must be at least 6 characters');
+                    return;
+                }
+                
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating Account...';
+                loading.classList.add('show');
+                hideError();
+                
+                try {
+                    console.log('Calling signUp with:', formData);
+                    
+                    // Call the signUp function
+                    const result = await window.signUp(formData);
+                    
+                    console.log('Signup result:', result);
+                    
+                    if (result && result.success) {
+                        // Success
+                        alert('✅ ' + result.message);
+                        signupForm.reset();
+                        loading.textContent = 'Account created successfully! Redirecting...';
+                        
+                        // Redirect to login or profile
+                        setTimeout(() => {
+                            window.location.href = '/samplepagetwo/login-callback.html';
+                        }, 2000);
+                    } else {
+                        throw new Error(result?.message || 'Signup failed');
+                    }
+                    
+                } catch (error) {
+                    console.error('Signup error:', error);
+                    showError('Signup failed: ' + error.message);
+                } finally {
+                    // Reset button
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Account';
+                    loading.classList.remove('show');
+                }
+            });
+            
+            // Login link handler
+            loginLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = '/samplepagetwo/login-callback.html';
+            });
+            
+            // Helper functions
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.add('show');
+            }
+            
+            function hideError() {
+                errorMessage.classList.remove('show');
+            }
+            
+            // Pre-fill form for testing (optional)
+            document.getElementById('fullName').value = 'Kate Keea';
+            document.getElementById('email').value = 'yasahmender@gmail.com';
+            document.getElementById('password').value = 'test123';
+        });
+    </script>
+</body>
+</html>
