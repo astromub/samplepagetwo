@@ -34,8 +34,8 @@ class ShoppingCart {
     async addItem(product, quantity = 1) {
         try {
             // Check if user is logged in for cart functionality
-            if (!window.supabase) {
-                throw new Error('Authentication service not available');
+           if (!window.supabase) {
+            console.warn('Supabase not available, using localStorage only');
             }
             
             const { data: { session } } = await window.supabase.auth.getSession();
