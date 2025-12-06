@@ -1,116 +1,111 @@
+// ================== ULTRA-EMERGENCY SIGNUP - LOADS FIRST ==================
+(function() {
+    console.log('🚀 ULTRA-EMERGENCY SIGNUP INITIALIZING...');
+    
+    // Define signUp function IMMEDIATELY - this runs before anything else
+    window.signUp = async function(userData) {
+        console.log('🆘 EMERGENCY signUp called with:', userData);
+        
+        // Validate input
+        if (!userData || !userData.email || !userData.password || !userData.fullName) {
+            throw new Error('Please fill in all required fields');
+        }
+        
+        if (userData.password.length < 6) {
+            throw new Error('Password must be at least 6 characters long');
+        }
+        
+        try {
+            // Initialize Supabase if not already done
+            const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
+            
+            if (!window.supabase) {
+                console.log('🔄 Initializing Supabase in emergency mode...');
+                window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+            
+            console.log('📤 Creating user in Supabase Auth...');
+            
+            // Create user in Supabase Auth
+            const { data, error } = await window.supabase.auth.signUp({
+                email: userData.email,
+                password: userData.password,
+                options: {
+                    data: {
+                        full_name: userData.fullName,
+                        user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
+                    }
+                }
+            });
+            
+            if (error) {
+                console.error('Auth error:', error);
+                throw error;
+            }
+            
+            console.log('✅ User created:', data.user);
+            
+            if (data.user) {
+                // Try to create profile in profiles table
+                try {
+                    console.log('📝 Creating profile...');
+                    const { error: profileError } = await window.supabase
+                        .from('profiles')
+                        .insert({
+                            id: data.user.id,
+                            username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
+                            full_name: userData.fullName,
+                            company: 'Astronub Limited'
+                        });
+                    
+                    if (profileError) {
+                        console.warn('⚠️ Profile creation warning (non-critical):', profileError);
+                        // Don't throw - this is optional
+                    }
+                } catch (profileError) {
+                    console.warn('⚠️ Could not create profile (non-critical):', profileError);
+                }
+                
+                return {
+                    success: true,
+                    message: 'Account created successfully! Please check your email to verify your account.',
+                    user: data.user
+                };
+            }
+            
+            throw new Error('Account creation failed - no user data returned');
+            
+        } catch (error) {
+            console.error('❌ Emergency signup error:', error);
+            return {
+                success: false,
+                message: error.message || 'Signup failed. Please try again.'
+            };
+        }
+    };
+    
+    console.log('✅ ULTRA-EMERGENCY signUp function INSTALLED');
+})();
+
+// ================== MAIN AUTH.JS CODE ==================
 const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
 
-// ================== IMMEDIATE INITIALIZATION ==================
-// Define signUp function IMMEDIATELY to prevent any "undefined" errors
+// Initialize Supabase
 (function() {
-    // Create a robust signUp function
-    const createSignUpFunction = function() {
-        return async function(userData) {
-            console.log('🔐 signUp function called with:', userData);
-            
-            // Validate input
-            if (!userData || !userData.email || !userData.password || !userData.fullName) {
-                throw new Error('Please fill in all required fields');
-            }
-            
-            if (userData.password.length < 6) {
-                throw new Error('Password must be at least 6 characters long');
-            }
-            
-            try {
-                // Make sure supabase is initialized
-                if (!window.supabase) {
-                    console.log('Initializing Supabase...');
-                    window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                }
-                
-                // Create user in Supabase Auth
-                const { data, error } = await window.supabase.auth.signUp({
-                    email: userData.email,
-                    password: userData.password,
-                    options: {
-                        data: {
-                            full_name: userData.fullName,
-                            user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
-                        }
-                    }
-                });
-                
-                if (error) throw error;
-                
-                if (data.user) {
-                    // Create profile in profiles table
-                    try {
-                        const { error: profileError } = await window.supabase
-                            .from('profiles')
-                            .insert({
-                                id: data.user.id,
-                                username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
-                                full_name: userData.fullName,
-                                company: 'Astronub Limited'
-                            });
-                        
-                        if (profileError) {
-                            console.warn('Profile creation warning:', profileError);
-                        }
-                    } catch (profileError) {
-                        console.warn('Could not create profile:', profileError);
-                    }
-                    
-                    return {
-                        success: true,
-                        message: 'Account created successfully! Please check your email to verify your account.',
-                        user: data.user
-                    };
-                }
-                
-                throw new Error('Account creation failed');
-                
-            } catch (error) {
-                console.error('Signup error:', error);
-                return {
-                    success: false,
-                    message: error.message || 'Signup failed. Please try again.'
-                };
-            }
-        };
-    };
-    
-    // Set up the function in multiple places for redundancy
-    const signUpFn = createSignUpFunction();
-    
-    // 1. Global window.signUp
-    window.signUp = signUpFn;
-    
-    // 2. Backup in case something overwrites it
-    window._astroMubSignUp = signUpFn;
-    
-    // 3. Self-healing: Check and restore if overwritten
-    setInterval(() => {
-        if (typeof window.signUp !== 'function') {
-            console.warn('signUp was overwritten, restoring...');
-            window.signUp = signUpFn;
-        }
-    }, 1000);
-    
-    console.log('✅ signUp function DEFINED and protected');
-})();
-
-// Initialize Supabase immediately
-(function() {
+    console.log('🔄 Initializing Supabase client...');
     if (!window.supabase) {
         try {
             window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log('Supabase client initialized');
+            console.log('✅ Supabase client initialized');
         } catch (error) {
-            console.error('Failed to initialize Supabase client:', error);
+            console.error('❌ Failed to initialize Supabase client:', error);
         }
+    } else {
+        console.log('✅ Supabase already initialized');
     }
 })();
-
-
-// ================== REST OF THE AUTH.JS FILE ==================
 
 // Auth state management
 let authInitialized = false;
@@ -317,13 +312,12 @@ async function handleEmailLogin(e) {
         // Success
         closeLoginModal();
         alert('Login successful!');
-        location.reload(); // Refresh to update UI
+        location.reload();
         
     } catch (error) {
         console.error('Login error:', error);
         alert('Login failed: ' + error.message);
         
-        // Reset button
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     }
@@ -354,7 +348,6 @@ async function handleEmailSignup(e) {
     submitBtn.disabled = true;
     
     try {
-        // Use the global signUp function
         const result = await window.signUp({
             fullName: name,
             email: email,
@@ -372,7 +365,6 @@ async function handleEmailSignup(e) {
         console.error('Signup error:', error);
         alert('Signup failed: ' + error.message);
         
-        // Reset button
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     }
@@ -437,7 +429,6 @@ function updateAuthUI(session) {
             <a href="#" id="logout-btn" class="nav-link logout-btn">🚪 Logout</a>
         `;
         
-        // Remove existing event listeners and add new one
         const logoutBtn = document.getElementById('logout-btn');
         logoutBtn?.replaceWith(logoutBtn.cloneNode(true));
         document.getElementById('logout-btn')?.addEventListener('click', async (e) => {
@@ -452,7 +443,6 @@ function updateAuthUI(session) {
             <a href="/samplepagetwo/cart.html" class="nav-link">🛒 Cart</a>
         `;
         
-        // Remove existing event listeners and add new one
         const loginBtn = document.getElementById('login-btn');
         loginBtn?.replaceWith(loginBtn.cloneNode(true));
         document.getElementById('login-btn')?.addEventListener('click', async (e) => {
@@ -469,7 +459,6 @@ async function initializeAuth() {
     try {
         setAuthLoading(true);
         
-        // Get current session
         const { data: { session }, error } = await window.supabase.auth.getSession();
         
         if (error) {
@@ -482,11 +471,9 @@ async function initializeAuth() {
         updateAuthUI(session);
         authInitialized = true;
         
-        // Set up auth state change listener (only once)
         window.supabase.auth.onAuthStateChange((event, session) => {
             console.log('Auth state changed:', event);
             
-            // Only update if session actually changed
             if (JSON.stringify(session) !== JSON.stringify(currentSession)) {
                 currentSession = session;
                 updateAuthUI(session);
@@ -508,7 +495,6 @@ async function getCurrentUserWithProfile() {
         if (error) throw error;
         
         if (user) {
-            // Get profile data
             const { data: profile, error: profileError } = await window.supabase
                 .from('profiles')
                 .select('*')
@@ -536,47 +522,22 @@ async function isAuthenticated() {
 
 // Initialize auth when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - initializing auth...');
+    
+    // Ensure Supabase is loaded
     if (window.supabase) {
-        // Small delay to ensure DOM is fully ready
         setTimeout(() => {
             initializeAuth();
-        }, 50);
+        }, 100);
     } else {
-        console.error('Supabase client not available');
+        console.error('Supabase client not available - retrying...');
+        setTimeout(() => {
+            if (window.supabase) {
+                initializeAuth();
+            }
+        }, 1000);
     }
 });
-
-// ================== SPECIAL HANDLING FOR SIGN.HTML ==================
-// Check if we're on the sign.html page and help it
-(function() {
-    // Check if this is a signup page by URL or form
-    const isSignupPage = window.location.pathname.includes('sign.html') || 
-                        document.getElementById('signupForm') ||
-                        document.querySelector('input[placeholder*="Keno Kata"]');
-    
-    if (isSignupPage) {
-        console.log('📝 Detected signup page, ensuring signUp is available');
-        
-        // Double-check signUp exists
-        if (typeof window.signUp !== 'function') {
-            console.error('🚨 EMERGENCY: signUp missing on signup page!');
-            
-            // Create emergency fallback
-            window.signUp = window._astroMubSignUp || async function(userData) {
-                console.log('🆘 Using emergency signUp');
-                return {
-                    success: false,
-                    message: 'Authentication service is temporarily unavailable. Please try again later.'
-                };
-            };
-        }
-        
-        // Notify the page that auth.js is ready
-        window.dispatchEvent(new CustomEvent('authReady', {
-            detail: { signUpAvailable: true }
-        }));
-    }
-})();
 
 // Export functions for use in other scripts
 window.authUtils = {
@@ -589,27 +550,12 @@ window.authUtils = {
     closeLoginModal,
     closeSignupModal,
     loginWithGitHub,
-    signUp: window.signUp, // Use the global function
+    signUp: window.signUp,
     handleEmailLogin,
-    handleEmailSignup,
-    // Special helper for sign.html
-    ensureSignUpReady: function() {
-        return new Promise((resolve) => {
-            if (typeof window.signUp === 'function') {
-                resolve(true);
-            } else {
-                const check = setInterval(() => {
-                    if (typeof window.signUp === 'function') {
-                        clearInterval(check);
-                        resolve(true);
-                    }
-                }, 100);
-            }
-        });
-    }
+    handleEmailSignup
 };
 
-// Add basic CSS for auth elements
+// Add CSS styles
 const authStyles = `
 <style>
 .welcome-text {
@@ -676,20 +622,9 @@ const authStyles = `
     right: -2px;
 }
 
-/* Modal input focus styles */
 input:focus {
     outline: none;
     border-color: #007bff !important;
-}
-
-/* Special styles for sign.html */
-#signupForm {
-    animation: fadeIn 0.5s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {
@@ -716,6 +651,7 @@ input:focus {
 
 document.head.insertAdjacentHTML('beforeend', authStyles);
 
-// Final log
-console.log('✅ auth.js COMPLETELY LOADED - signUp is DEFINED:', typeof window.signUp === 'function');
-console.log('📁 Current page:', window.location.pathname);
+// Final initialization check
+console.log('✅ auth.js COMPLETELY LOADED');
+console.log('✅ signUp is DEFINED:', typeof window.signUp === 'function');
+console.log('✅ Supabase is DEFINED:', typeof window.supabase !== 'undefined');
