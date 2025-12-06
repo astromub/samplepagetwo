@@ -5,11 +5,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account - AstroMub Store</title>
     
-    <!-- Load Supabase FIRST -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Load auth.js IMMEDIATELY -->
-    <script src="/samplepagetwo/assets/auth.js"></script>
+    <!-- SUPER SIMPLE - No complex dependencies -->
+    <script>
+        // Define a SUPER SIMPLE signUp function that works independently
+        window.simpleSignUp = async function(userData) {
+            console.log('🚀 SIMPLE signUp called with:', userData);
+            
+            if (!userData || !userData.email || !userData.password || !userData.fullName) {
+                throw new Error('Please fill in all required fields');
+            }
+            
+            if (userData.password.length < 6) {
+                throw new Error('Password must be at least 6 characters long');
+            }
+            
+            try {
+                // Direct Supabase initialization
+                const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
+                
+                // Load Supabase if not loaded
+                if (!window.supabase) {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+                    document.head.appendChild(script);
+                    
+                    // Wait for Supabase to load
+                    await new Promise((resolve) => {
+                        const check = setInterval(() => {
+                            if (typeof window.supabase !== 'undefined') {
+                                clearInterval(check);
+                                resolve();
+                            }
+                        }, 100);
+                    });
+                }
+                
+                // Initialize client
+                if (!window.supabase.auth) {
+                    window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
+                
+                // Create user
+                const { data, error } = await window.supabase.auth.signUp({
+                    email: userData.email,
+                    password: userData.password,
+                    options: {
+                        data: {
+                            full_name: userData.fullName,
+                            user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
+                        }
+                    }
+                });
+                
+                if (error) throw error;
+                
+                if (data.user) {
+                    // Try to create profile (optional)
+                    try {
+                        await window.supabase
+                            .from('profiles')
+                            .insert({
+                                id: data.user.id,
+                                username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
+                                full_name: userData.fullName,
+                                company: 'Astronub Limited'
+                            });
+                    } catch (profileError) {
+                        console.warn('Profile optional:', profileError);
+                    }
+                    
+                    return {
+                        success: true,
+                        message: 'Account created successfully!',
+                        user: data.user
+                    };
+                }
+                
+                throw new Error('Account creation failed');
+                
+            } catch (error) {
+                console.error('Simple signup error:', error);
+                throw error;
+            }
+        };
+    </script>
     
     <style>
         body {
@@ -42,6 +122,7 @@
             color: #c00;
             text-align: center;
             font-size: 14px;
+            display: none;
         }
         
         .form-group {
@@ -119,6 +200,24 @@
             color: #080;
             text-align: center;
             font-size: 14px;
+            display: none;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -127,11 +226,11 @@
         <h1 style="text-align: center; margin-bottom: 10px; color: #333;">AstroMub Store</h1>
         <p style="text-align: center; color: #666; margin-bottom: 30px;">Create your account</p>
         
-        <div class="error-box" id="errorBox" style="display: none;">
+        <div class="error-box" id="errorBox">
             <!-- Error will appear here -->
         </div>
         
-        <div class="success-message" id="successBox" style="display: none;">
+        <div class="success-message" id="successBox">
             <!-- Success will appear here -->
         </div>
         
@@ -154,8 +253,8 @@
                     type="email" 
                     id="email" 
                     name="email" 
-                    placeholder="ysaakmendez@gmail.com"
-                    value="ysaakmendez@gmail.com"
+                    placeholder="me@gmail.com"
+                    value="me@gmail.com"
                     required
                 >
             </div>
@@ -184,106 +283,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ sign.html loaded - READY!');
+            
             const signupForm = document.getElementById('signupForm');
             const errorBox = document.getElementById('errorBox');
             const successBox = document.getElementById('successBox');
             const submitBtn = document.getElementById('submitBtn');
-            
-            // Wait for auth.js to be fully ready
-            function waitForAuth() {
-                return new Promise((resolve) => {
-                    const checkAuth = () => {
-                        if (typeof window.signUp === 'function' && window.supabase) {
-                            console.log('✅ Auth system ready!');
-                            resolve(true);
-                        } else {
-                            console.log('⏳ Waiting for auth system...');
-                            setTimeout(checkAuth, 100);
-                        }
-                    };
-                    checkAuth();
-                });
-            }
-            
-            async function initializePage() {
-                console.log('🔄 Initializing signup page...');
-                
-                // Show loading state
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Loading...';
-                
-                try {
-                    // Wait for auth system
-                    await waitForAuth();
-                    
-                    console.log('✅ signUp function is available:', typeof window.signUp);
-                    
-                    // Enable form
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Create Account';
-                    hideError();
-                    
-                    // Set focus
-                    document.getElementById('password').focus();
-                    
-                } catch (error) {
-                    console.error('Failed to initialize:', error);
-                    showError('Authentication service is not available. Please refresh the page.');
-                }
-            }
-            
-            // Handle form submission
-            signupForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const formData = {
-                    fullName: document.getElementById('fullName').value.trim(),
-                    email: document.getElementById('email').value.trim(),
-                    password: document.getElementById('password').value
-                };
-                
-                // Validate
-                if (!formData.fullName || !formData.email || !formData.password) {
-                    showError('Please fill in all fields');
-                    return;
-                }
-                
-                if (formData.password.length < 6) {
-                    showError('Password must be at least 6 characters');
-                    return;
-                }
-                
-                // Show loading
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Creating Account...';
-                hideError();
-                hideSuccess();
-                
-                try {
-                    console.log('📤 Submitting signup...');
-                    const result = await window.signUp(formData);
-                    
-                    if (result && result.success) {
-                        showSuccess(result.message);
-                        signupForm.reset();
-                        submitBtn.disabled = true;
-                        submitBtn.textContent = 'Account Created!';
-                        
-                        // Redirect after 2 seconds
-                        setTimeout(() => {
-                            window.location.href = '/samplepagetwo/profile.html';
-                        }, 2000);
-                    } else {
-                        throw new Error(result?.message || 'Signup failed');
-                    }
-                    
-                } catch (error) {
-                    console.error('Signup error:', error);
-                    showError('Signup failed: ' + error.message);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Create Account';
-                }
-            });
             
             // Helper functions
             function showError(message) {
@@ -306,8 +311,70 @@
                 successBox.style.display = 'none';
             }
             
-            // Initialize the page
-            initializePage();
+            function showLoading(text) {
+                submitBtn.innerHTML = `<div class="spinner"></div>${text}`;
+                submitBtn.disabled = true;
+            }
+            
+            function hideLoading(text) {
+                submitBtn.innerHTML = text;
+                submitBtn.disabled = false;
+            }
+            
+            // Handle form submission
+            signupForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                console.log('📤 Form submitted');
+                
+                const formData = {
+                    fullName: document.getElementById('fullName').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    password: document.getElementById('password').value
+                };
+                
+                // Validate
+                if (!formData.fullName || !formData.email || !formData.password) {
+                    showError('Please fill in all fields');
+                    return;
+                }
+                
+                if (formData.password.length < 6) {
+                    showError('Password must be at least 6 characters');
+                    return;
+                }
+                
+                // Show loading
+                showLoading('Creating Account...');
+                hideError();
+                hideSuccess();
+                
+                try {
+                    console.log('🚀 Calling simpleSignUp...');
+                    const result = await window.simpleSignUp(formData);
+                    console.log('✅ Signup result:', result);
+                    
+                    if (result && result.success) {
+                        showSuccess(result.message);
+                        hideLoading('Account Created!');
+                        
+                        // Redirect after 2 seconds
+                        setTimeout(() => {
+                            window.location.href = '/samplepagetwo/profile.html';
+                        }, 2000);
+                    } else {
+                        throw new Error(result?.message || 'Signup failed');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Signup error:', error);
+                    showError('Signup failed: ' + error.message);
+                    hideLoading('Create Account');
+                }
+            });
+            
+            // Page is ready
+            console.log('✅ sign.html initialized successfully');
+            hideLoading('Create Account');
         });
     </script>
 </body>
