@@ -1,92 +1,109 @@
-// ================== ULTRA-EMERGENCY SIGNUP - LOADS FIRST ==================
-(function() {
-    console.log('🚀 ULTRA-EMERGENCY SIGNUP INITIALIZING...');
+// ================== EMERGENCY SIGNUP FUNCTION - LOADS FIRST ==================
+console.log('🚀 auth.js STARTING - Installing emergency signUp...');
+
+// Define signUp function IMMEDIATELY at the very top
+window.signUp = async function(userData) {
+    console.log('🔐 signUp function called with:', userData);
     
-    // Define signUp function IMMEDIATELY - this runs before anything else
-    window.signUp = async function(userData) {
-        console.log('🆘 EMERGENCY signUp called with:', userData);
-        
-        // Validate input
-        if (!userData || !userData.email || !userData.password || !userData.fullName) {
-            throw new Error('Please fill in all required fields');
-        }
-        
-        if (userData.password.length < 6) {
-            throw new Error('Password must be at least 6 characters long');
-        }
-        
-        try {
-            // Initialize Supabase if not already done
+    // Validate input
+    if (!userData || !userData.email || !userData.password || !userData.fullName) {
+        throw new Error('Please fill in all required fields');
+    }
+    
+    if (userData.password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+    }
+    
+    try {
+        // Make sure supabase is initialized
+        if (!window.supabase) {
+            console.log('Initializing Supabase...');
             const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
             
-            if (!window.supabase) {
-                console.log('🔄 Initializing Supabase in emergency mode...');
-                window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            }
-            
-            console.log('📤 Creating user in Supabase Auth...');
-            
-            // Create user in Supabase Auth
-            const { data, error } = await window.supabase.auth.signUp({
-                email: userData.email,
-                password: userData.password,
-                options: {
-                    data: {
-                        full_name: userData.fullName,
-                        user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
-                    }
-                }
-            });
-            
-            if (error) {
-                console.error('Auth error:', error);
-                throw error;
-            }
-            
-            console.log('✅ User created:', data.user);
-            
-            if (data.user) {
-                // Try to create profile in profiles table
-                try {
-                    console.log('📝 Creating profile...');
-                    const { error: profileError } = await window.supabase
-                        .from('profiles')
-                        .insert({
-                            id: data.user.id,
-                            username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
-                            full_name: userData.fullName,
-                            company: 'Astronub Limited'
-                        });
-                    
-                    if (profileError) {
-                        console.warn('⚠️ Profile creation warning (non-critical):', profileError);
-                        // Don't throw - this is optional
-                    }
-                } catch (profileError) {
-                    console.warn('⚠️ Could not create profile (non-critical):', profileError);
-                }
+            // Load Supabase if not loaded
+            if (typeof supabase === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+                document.head.appendChild(script);
                 
-                return {
-                    success: true,
-                    message: 'Account created successfully! Please check your email to verify your account.',
-                    user: data.user
-                };
+                // Wait for Supabase to load
+                await new Promise((resolve) => {
+                    const check = setInterval(() => {
+                        if (typeof supabase !== 'undefined') {
+                            clearInterval(check);
+                            resolve();
+                        }
+                    }, 100);
+                });
             }
             
-            throw new Error('Account creation failed - no user data returned');
+            window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+        
+        console.log('📤 Creating user in Supabase Auth...');
+        
+        // Create user in Supabase Auth
+        const { data, error } = await window.supabase.auth.signUp({
+            email: userData.email,
+            password: userData.password,
+            options: {
+                data: {
+                    full_name: userData.fullName,
+                    user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
+                }
+            }
+        });
+        
+        if (error) {
+            console.error('Auth error:', error);
+            throw error;
+        }
+        
+        console.log('✅ User created:', data.user);
+        
+        if (data.user) {
+            // Create profile in profiles table
+            try {
+                console.log('📝 Creating profile in database...');
+                const { error: profileError } = await window.supabase
+                    .from('profiles')
+                    .insert({
+                        id: data.user.id,
+                        username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
+                        full_name: userData.fullName,
+                        company: 'Astronub Limited'
+                    });
+                
+                if (profileError) {
+                    console.warn('⚠️ Profile creation warning:', profileError);
+                    // Don't throw error - profile is optional for now
+                } else {
+                    console.log('✅ Profile created successfully');
+                }
+            } catch (profileError) {
+                console.warn('⚠️ Could not create profile:', profileError);
+            }
             
-        } catch (error) {
-            console.error('❌ Emergency signup error:', error);
             return {
-                success: false,
-                message: error.message || 'Signup failed. Please try again.'
+                success: true,
+                message: 'Account created successfully!',
+                user: data.user
             };
         }
-    };
-    
-    console.log('✅ ULTRA-EMERGENCY signUp function INSTALLED');
-})();
+        
+        throw new Error('Account creation failed - no user data returned');
+        
+    } catch (error) {
+        console.error('❌ Signup error:', error);
+        return {
+            success: false,
+            message: error.message || 'Signup failed. Please try again.'
+        };
+    }
+};
+
+console.log('✅ Emergency signUp function INSTALLED');
 
 // ================== MAIN AUTH.JS CODE ==================
 const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
@@ -95,29 +112,21 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Initialize Supabase
 (function() {
     console.log('🔄 Initializing Supabase client...');
-    if (!window.supabase) {
+    if (typeof supabase !== 'undefined' && !window.supabase) {
         try {
-            window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             console.log('✅ Supabase client initialized');
         } catch (error) {
             console.error('❌ Failed to initialize Supabase client:', error);
         }
-    } else {
-        console.log('✅ Supabase already initialized');
+    } else if (!window.supabase) {
+        console.log('⏳ Supabase library not loaded yet, will initialize later');
     }
 })();
 
 // Auth state management
 let authInitialized = false;
 let currentSession = null;
-
-// Utility function to show loading state
-function setAuthLoading(isLoading) {
-    const userNav = document.getElementById('user-nav');
-    if (userNav && isLoading) {
-        userNav.innerHTML = '<span style="color: #666;">Loading...</span>';
-    }
-}
 
 // Get redirect URL
 function getRedirectUrl() {
@@ -372,7 +381,6 @@ async function handleEmailSignup(e) {
 
 // Handle GitHub login
 async function loginWithGitHub() {
-    setAuthLoading(true);
     try {
         const { error } = await window.supabase.auth.signInWithOAuth({
             provider: 'github',
@@ -385,13 +393,11 @@ async function loginWithGitHub() {
     } catch (error) {
         console.error('GitHub login error:', error);
         alert('GitHub login failed. Please try again.');
-        setAuthLoading(false);
     }
 }
 
 // Handle user logout
 async function handleLogout() {
-    setAuthLoading(true);
     try {
         const { error } = await window.supabase.auth.signOut();
         if (error) throw error;
@@ -401,7 +407,6 @@ async function handleLogout() {
     } catch (error) {
         console.error('Logout error:', error);
         alert('Logout failed. Please try again.');
-        setAuthLoading(false);
     }
 }
 
@@ -457,7 +462,10 @@ async function initializeAuth() {
     if (authInitialized) return;
     
     try {
-        setAuthLoading(true);
+        // Ensure Supabase is initialized
+        if (!window.supabase) {
+            window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
         
         const { data: { session }, error } = await window.supabase.auth.getSession();
         
@@ -483,77 +491,18 @@ async function initializeAuth() {
     } catch (error) {
         console.error('Auth initialization error:', error);
         updateAuthUI(null);
-    } finally {
-        setAuthLoading(false);
     }
-}
-
-// Get current user with profile data
-async function getCurrentUserWithProfile() {
-    try {
-        const { data: { user }, error } = await window.supabase.auth.getUser();
-        if (error) throw error;
-        
-        if (user) {
-            const { data: profile, error: profileError } = await window.supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-            
-            if (profileError && profileError.code !== 'PGRST116') {
-                console.error('Error fetching profile:', profileError);
-            }
-            
-            return { user, profile: profile || {} };
-        }
-        return null;
-    } catch (error) {
-        console.error('Error getting user with profile:', error);
-        return null;
-    }
-}
-
-// Check if user is authenticated
-async function isAuthenticated() {
-    const { data: { session } } = await window.supabase.auth.getSession();
-    return !!session;
 }
 
 // Initialize auth when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM Content Loaded - initializing auth...');
     
-    // Ensure Supabase is loaded
-    if (window.supabase) {
-        setTimeout(() => {
-            initializeAuth();
-        }, 100);
-    } else {
-        console.error('Supabase client not available - retrying...');
-        setTimeout(() => {
-            if (window.supabase) {
-                initializeAuth();
-            }
-        }, 1000);
-    }
+    // Small delay to ensure everything is loaded
+    setTimeout(() => {
+        initializeAuth();
+    }, 100);
 });
-
-// Export functions for use in other scripts
-window.authUtils = {
-    getCurrentUser: getCurrentUserWithProfile,
-    isAuthenticated,
-    initializeAuth,
-    handleLogout,
-    showLoginModal,
-    showSignupModal,
-    closeLoginModal,
-    closeSignupModal,
-    loginWithGitHub,
-    signUp: window.signUp,
-    handleEmailLogin,
-    handleEmailSignup
-};
 
 // Add CSS styles
 const authStyles = `
@@ -651,7 +600,6 @@ input:focus {
 
 document.head.insertAdjacentHTML('beforeend', authStyles);
 
-// Final initialization check
+// Final log
 console.log('✅ auth.js COMPLETELY LOADED');
 console.log('✅ signUp is DEFINED:', typeof window.signUp === 'function');
-console.log('✅ Supabase is DEFINED:', typeof window.supabase !== 'undefined');
