@@ -109,6 +109,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     }
 })();
 
+
 // ================== REST OF THE AUTH.JS FILE ==================
 
 // Auth state management
