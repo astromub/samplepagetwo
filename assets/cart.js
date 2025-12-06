@@ -1,241 +1,143 @@
-// cart.js - Shopping Cart Management
-class ShoppingCart {
-    constructor() {
-        this.items = this.loadCartFromStorage();
-        this.init();
-    }
-
-    init() {
-        // Initialize cart event listeners
-        this.updateCartUI();
-    }
-
-    // Load cart from localStorage
-    loadCartFromStorage() {
-        try {
-            const cartData = localStorage.getItem('astromub_cart');
-            return cartData ? JSON.parse(cartData) : [];
-        } catch (error) {
-            console.error('Error loading cart from storage:', error);
-            return [];
+// cart.js - Shopping Cart Functionality
+(function() {
+    console.log('🛒 Initializing cart system...');
+    
+    class ShoppingCart {
+        constructor() {
+            this.items = JSON.parse(localStorage.getItem('astromub_cart')) || [];
+            console.log('Cart loaded with items:', this.items);
         }
-    }
-
-    // Save cart to localStorage
-    saveCartToStorage() {
-        try {
+        
+        // Save cart to localStorage
+        save() {
             localStorage.setItem('astromub_cart', JSON.stringify(this.items));
-        } catch (error) {
-            console.error('Error saving cart to storage:', error);
+            this.updateCartUI();
         }
-    }
-
-    // Add item to cart
-    async addItem(product, quantity = 1) {
-        try {
-            // Check if user is logged in for cart functionality
-           if (!window.supabase) {
-            console.warn('Supabase not available, using localStorage only');
-            }
+        
+        // Add item to cart
+        addItem(product, quantity = 1) {
+            const existingItem = this.items.find(item => item.sku === product.sku);
             
-            const { data: { session } } = await window.supabase.auth.getSession();
-            if (!session) {
-                alert('Please login first to add items to cart!');
-                const loginBtn = document.getElementById('login-btn');
-                if (loginBtn) loginBtn.click();
-                return false;
-            }
-
-            const existingItemIndex = this.items.findIndex(item => item.sku === product.sku);
-            
-            if (existingItemIndex > -1) {
-                // Update quantity if item already exists
-                this.items[existingItemIndex].quantity += quantity;
+            if (existingItem) {
+                existingItem.quantity += quantity;
             } else {
-                // Add new item
                 this.items.push({
                     sku: product.sku,
                     title: product.title,
                     price: product.price,
                     image_url: product.image_url,
-                    quantity: quantity,
-                    added_at: new Date().toISOString()
+                    quantity: quantity
                 });
             }
-
-            this.saveCartToStorage();
-            this.updateCartUI();
-            this.showCartNotification(`Added ${product.title} to cart!`);
-            return true;
-        } catch (error) {
-            console.error('Error adding item to cart:', error);
-            alert('Failed to add item to cart. Please try again.');
-            return false;
+            
+            this.save();
+            console.log('Item added:', product.sku, 'Quantity:', quantity);
         }
-    }
-
-    // Remove item from cart
-    removeItem(sku) {
-        this.items = this.items.filter(item => item.sku !== sku);
-        this.saveCartToStorage();
-        this.updateCartUI();
-        this.showCartNotification('Item removed from cart!');
-    }
-
-    // Update item quantity
-    updateQuantity(sku, quantity) {
-        if (quantity <= 0) {
-            this.removeItem(sku);
-            return;
+        
+        // Remove item from cart
+        removeItem(sku) {
+            this.items = this.items.filter(item => item.sku !== sku);
+            this.save();
+            console.log('Item removed:', sku);
         }
-
-        const item = this.items.find(item => item.sku === sku);
-        if (item) {
-            item.quantity = quantity;
-            this.saveCartToStorage();
-            this.updateCartUI();
-        }
-    }
-
-    // Clear entire cart
-    clearCart() {
-        this.items = [];
-        this.saveCartToStorage();
-        this.updateCartUI();
-        this.showCartNotification('Cart cleared!');
-    }
-
-    // Get cart total
-    getCartTotal() {
-        return this.items.reduce((total, item) => total + (item.price * item.quantity), 0);
-    }
-
-    // Get total items count
-    getTotalItems() {
-        return this.items.reduce((total, item) => total + item.quantity, 0);
-    }
-
-    // Show cart notification
-    showCartNotification(message) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #28a745;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-        `;
-        notification.textContent = message;
         
-        document.body.appendChild(notification);
-        
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
-    }
-
-    // Update cart UI (cart icon, count, etc.)
-    updateCartUI() {
-        const totalItems = this.getTotalItems();
-        
-        // Update cart count in navbar
-        const cartCountElements = document.querySelectorAll('.cart-count');
-        cartCountElements.forEach(element => {
-            element.textContent = totalItems;
-            element.style.display = totalItems > 0 ? 'inline' : 'none';
-        });
-    }
-
-    // Checkout process
-    async checkout() {
-        try {
-            if (!window.supabase) {
-                throw new Error('Authentication service not available');
-            }
-
-            const { data: { session } } = await window.supabase.auth.getSession();
-            if (!session) {
-                alert('Please login to complete your purchase!');
+        // Update item quantity
+        updateQuantity(sku, quantity) {
+            if (quantity < 1) {
+                this.removeItem(sku);
                 return;
             }
-
-            if (this.items.length === 0) {
-                alert('Your cart is empty!');
-                return;
-            }
-
-            // Process each item in cart
-            for (const item of this.items) {
-                const { error } = await window.supabase
-                    .from('purchases')
-                    .insert({
-                        user_id: session.user.id,
-                        product_sku: item.sku,
-                        amount: item.price * item.quantity
-                    });
-
-                if (error) {
-                    throw new Error(`Failed to process ${item.title}: ${error.message}`);
-                }
-            }
-
-            // Clear cart after successful purchase
-            this.clearCart();
             
-            alert(`Thank you! Your order has been placed successfully. Total: $${this.getCartTotal().toFixed(2)}`);
-            window.location.href = '/samplepagetwo/profile.html';
-            
-        } catch (error) {
-            console.error('Checkout error:', error);
-            alert('Checkout failed: ' + error.message);
+            const item = this.items.find(item => item.sku === sku);
+            if (item) {
+                item.quantity = quantity;
+                this.save();
+            }
         }
-    }
-
-    // Get cart items (for external use)
-    getItems() {
-        return this.items;
-    }
-}
-
-// Initialize global cart instance
-window.cart = new ShoppingCart();
-
-// Add cart styles to document
-const cartStyles = `
-<style>
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+        
+        // Get all items
+        getItems() {
+            return this.items;
+        }
+        
+        // Get total number of items
+        getTotalItems() {
+            return this.items.reduce((total, item) => total + item.quantity, 0);
+        }
+        
+        // Get cart total
+        getCartTotal() {
+            return this.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+        }
+        
+        // Clear cart
+        clear() {
+            this.items = [];
+            this.save();
+        }
+        
+        // Checkout
+        async checkout() {
+            try {
+                if (!window.supabase) {
+                    throw new Error('Authentication not available');
+                }
+                
+                const { data: { session } } = await window.supabase.auth.getSession();
+                
+                if (!session) {
+                    alert('Please login to checkout');
+                    return;
+                }
+                
+                // Create purchases for each item
+                for (const item of this.items) {
+                    const { error } = await window.supabase
+                        .from('purchases')
+                        .insert({
+                            user_id: session.user.id,
+                            product_sku: item.sku,
+                            amount: item.price * item.quantity,
+                            status: 'completed'
+                        });
+                    
+                    if (error) throw error;
+                }
+                
+                // Clear cart after successful purchase
+                this.clear();
+                alert('Checkout successful! Thank you for your purchase.');
+                window.location.href = '/samplepagetwo/profile.html';
+                
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('Checkout failed: ' + error.message);
+            }
+        }
+        
+        // Update cart UI across all pages
+        updateCartUI() {
+            const cartCounts = document.querySelectorAll('.cart-count');
+            const totalItems = this.getTotalItems();
+            
+            cartCounts.forEach(count => {
+                count.textContent = totalItems;
+            });
+            
+            // Dispatch event for cart updates
+            window.dispatchEvent(new CustomEvent('cartUpdated', {
+                detail: { items: this.items, total: this.getCartTotal() }
+            }));
+        }
     }
     
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-
-    .cart-count {
-        background: #dc3545;
-        color: white;
-        border-radius: 50%;
-        padding: 2px 6px;
-        font-size: 0.7rem;
-        position: absolute;
-        top: -5px;
-        right: -5px;
-    }
-</style>
-`;
-
-document.head.insertAdjacentHTML('beforeend', cartStyles);
+    // Initialize cart
+    window.cart = new ShoppingCart();
+    
+    // Initial UI update
+    setTimeout(() => {
+        window.cart.updateCartUI();
+    }, 500);
+    
+    console.log('✅ Cart system initialized');
+})();
