@@ -5,91 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account - AstroMub Store</title>
     
-    <!-- SUPER SIMPLE - No complex dependencies -->
-    <script>
-        // Define a SUPER SIMPLE signUp function that works independently
-        window.simpleSignUp = async function(userData) {
-            console.log('🚀 SIMPLE signUp called with:', userData);
-            
-            if (!userData || !userData.email || !userData.password || !userData.fullName) {
-                throw new Error('Please fill in all required fields');
-            }
-            
-            if (userData.password.length < 6) {
-                throw new Error('Password must be at least 6 characters long');
-            }
-            
-            try {
-                // Direct Supabase initialization
-                const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
-                
-                // Load Supabase if not loaded
-                if (!window.supabase) {
-                    const script = document.createElement('script');
-                    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-                    document.head.appendChild(script);
-                    
-                    // Wait for Supabase to load
-                    await new Promise((resolve) => {
-                        const check = setInterval(() => {
-                            if (typeof window.supabase !== 'undefined') {
-                                clearInterval(check);
-                                resolve();
-                            }
-                        }, 100);
-                    });
-                }
-                
-                // Initialize client
-                if (!window.supabase.auth) {
-                    window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                }
-                
-                // Create user
-                const { data, error } = await window.supabase.auth.signUp({
-                    email: userData.email,
-                    password: userData.password,
-                    options: {
-                        data: {
-                            full_name: userData.fullName,
-                            user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
-                        }
-                    }
-                });
-                
-                if (error) throw error;
-                
-                if (data.user) {
-                    // Try to create profile (optional)
-                    try {
-                        await window.supabase
-                            .from('profiles')
-                            .insert({
-                                id: data.user.id,
-                                username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
-                                full_name: userData.fullName,
-                                company: 'Astronub Limited'
-                            });
-                    } catch (profileError) {
-                        console.warn('Profile optional:', profileError);
-                    }
-                    
-                    return {
-                        success: true,
-                        message: 'Account created successfully!',
-                        user: data.user
-                    };
-                }
-                
-                throw new Error('Account creation failed');
-                
-            } catch (error) {
-                console.error('Simple signup error:', error);
-                throw error;
-            }
-        };
-    </script>
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
         body {
@@ -253,8 +170,8 @@
                     type="email" 
                     id="email" 
                     name="email" 
-                    placeholder="me@gmail.com"
-                    value="me@gmail.com"
+                    placeholder="ysaakmendez@gmail.com"
+                    value="ysaakmendez@gmail.com"
                     required
                 >
             </div>
@@ -277,18 +194,28 @@
         </form>
         
         <div class="login-link">
-            Already have an account? <a href="/samplepagetwo/login-callback.html" id="loginLink">Login</a>
+            Already have an account? <a href="/samplepagetwo/login-callback.html">Login</a>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ sign.html loaded - READY!');
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('✅ sign.html loaded');
             
             const signupForm = document.getElementById('signupForm');
             const errorBox = document.getElementById('errorBox');
             const successBox = document.getElementById('successBox');
             const submitBtn = document.getElementById('submitBtn');
+            
+            // Initialize Supabase
+            if (!window.supabase) {
+                window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase initialized in sign.html');
+            }
             
             // Helper functions
             function showError(message) {
@@ -321,6 +248,54 @@
                 submitBtn.disabled = false;
             }
             
+            // Simple signup function
+            async function simpleSignUp(userData) {
+                console.log('🚀 Starting signup...');
+                
+                try {
+                    const { data, error } = await window.supabase.auth.signUp({
+                        email: userData.email,
+                        password: userData.password,
+                        options: {
+                            data: {
+                                full_name: userData.fullName,
+                                user_name: userData.fullName.toLowerCase().replace(/\s+/g, '_')
+                            }
+                        }
+                    });
+                    
+                    if (error) throw error;
+                    
+                    if (data.user) {
+                        // Create profile
+                        try {
+                            await window.supabase
+                                .from('profiles')
+                                .insert({
+                                    id: data.user.id,
+                                    username: userData.fullName.toLowerCase().replace(/\s+/g, '_'),
+                                    full_name: userData.fullName,
+                                    company: 'Astronub Limited'
+                                });
+                        } catch (profileError) {
+                            console.warn('Profile optional:', profileError);
+                        }
+                        
+                        return {
+                            success: true,
+                            message: 'Account created successfully!',
+                            user: data.user
+                        };
+                    }
+                    
+                    throw new Error('Account creation failed');
+                    
+                } catch (error) {
+                    console.error('Signup error:', error);
+                    throw error;
+                }
+            }
+            
             // Handle form submission
             signupForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -349,8 +324,8 @@
                 hideSuccess();
                 
                 try {
-                    console.log('🚀 Calling simpleSignUp...');
-                    const result = await window.simpleSignUp(formData);
+                    console.log('🚀 Calling signup...');
+                    const result = await simpleSignUp(formData);
                     console.log('✅ Signup result:', result);
                     
                     if (result && result.success) {
@@ -372,9 +347,7 @@
                 }
             });
             
-            // Page is ready
-            console.log('✅ sign.html initialized successfully');
-            hideLoading('Create Account');
+            console.log('✅ sign.html ready for signup');
         });
     </script>
 </body>
