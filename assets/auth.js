@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js'
+
 // ================== EMERGENCY SIGNUP FUNCTION - LOADS FIRST ==================
 console.log('🚀 auth.js STARTING - Installing emergency signUp...');
 
