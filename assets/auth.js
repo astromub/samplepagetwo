@@ -1,9 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
+// ================== AUTH.JS - COMPLETE FIXED VERSION ==================
+console.log('🚀 auth.js STARTING...');
 
-// ================== EMERGENCY SIGNUP FUNCTION - LOADS FIRST ==================
-console.log('🚀 auth.js STARTING - Installing emergency signUp...');
+// Global Supabase configuration - DECLARE ONLY ONCE
+const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
 
-// Define signUp function IMMEDIATELY at the very top
+// ================== EMERGENCY SIGNUP FUNCTION ==================
 window.signUp = async function(userData) {
     console.log('🔐 signUp function called with:', userData);
     
@@ -19,28 +21,8 @@ window.signUp = async function(userData) {
     try {
         // Make sure supabase is initialized
         if (!window.supabase) {
-            console.log('Initializing Supabase...');
-            const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
-            
-            // Load Supabase if not loaded
-            if (typeof supabase === 'undefined') {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-                document.head.appendChild(script);
-                
-                // Wait for Supabase to load
-                await new Promise((resolve) => {
-                    const check = setInterval(() => {
-                        if (typeof supabase !== 'undefined') {
-                            clearInterval(check);
-                            resolve();
-                        }
-                    }, 100);
-                });
-            }
-            
-            window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.error('❌ Supabase client not initialized!');
+            throw new Error('Authentication service not available');
         }
         
         console.log('📤 Creating user in Supabase Auth...');
@@ -107,26 +89,34 @@ window.signUp = async function(userData) {
 
 console.log('✅ Emergency signUp function INSTALLED');
 
-// ================== MAIN AUTH.JS CODE ==================
-const SUPABASE_URL = 'https://ntxnbrvbzykiciueqnha.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50eG5icnZienlraWNpdWVxbmhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwODg4ODksImV4cCI6MjA3OTY2NDg4OX0.kn0fQLobIvR--hBiXSB71SFQgID_vaCQWEYYjyO5XiE';
-
-// Initialize Supabase
-(function() {
+// ================== INITIALIZE SUPABASE ==================
+function initializeSupabase() {
     console.log('🔄 Initializing Supabase client...');
-    if (typeof supabase !== 'undefined' && !window.supabase) {
+    
+    if (typeof supabase === 'undefined') {
+        console.error('❌ Supabase library not loaded! Make sure CDN is included before this script.');
+        return false;
+    }
+    
+    if (!window.supabase) {
         try {
             window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             console.log('✅ Supabase client initialized');
+            return true;
         } catch (error) {
             console.error('❌ Failed to initialize Supabase client:', error);
+            return false;
         }
-    } else if (!window.supabase) {
-        console.log('⏳ Supabase library not loaded yet, will initialize later');
     }
-})();
+    
+    console.log('✅ Supabase client already initialized');
+    return true;
+}
 
-// Auth state management
+// Initialize immediately
+initializeSupabase();
+
+// ================== AUTH STATE MANAGEMENT ==================
 let authInitialized = false;
 let currentSession = null;
 
@@ -135,6 +125,7 @@ function getRedirectUrl() {
     return `${window.location.origin}/samplepagetwo/login-callback.html`;
 }
 
+// ================== MODAL FUNCTIONS ==================
 // Show login modal
 function showLoginModal() {
     const modal = document.createElement('div');
@@ -294,6 +285,7 @@ function closeSignupModal() {
     if (modal) modal.remove();
 }
 
+// ================== AUTH HANDLERS ==================
 // Handle email login
 async function handleEmailLogin(e) {
     e.preventDefault();
@@ -313,6 +305,10 @@ async function handleEmailLogin(e) {
     submitBtn.disabled = true;
     
     try {
+        if (!window.supabase) {
+            throw new Error('Authentication service not available');
+        }
+        
         const { data, error } = await window.supabase.auth.signInWithPassword({
             email: email,
             password: password
@@ -359,6 +355,10 @@ async function handleEmailSignup(e) {
     submitBtn.disabled = true;
     
     try {
+        if (!window.signUp) {
+            throw new Error('Signup function not available');
+        }
+        
         const result = await window.signUp({
             fullName: name,
             email: email,
@@ -384,6 +384,10 @@ async function handleEmailSignup(e) {
 // Handle GitHub login
 async function loginWithGitHub() {
     try {
+        if (!window.supabase) {
+            throw new Error('Authentication service not available');
+        }
+        
         const { error } = await window.supabase.auth.signInWithOAuth({
             provider: 'github',
             options: { 
@@ -401,6 +405,10 @@ async function loginWithGitHub() {
 // Handle user logout
 async function handleLogout() {
     try {
+        if (!window.supabase) {
+            throw new Error('Authentication service not available');
+        }
+        
         const { error } = await window.supabase.auth.signOut();
         if (error) throw error;
         
@@ -412,6 +420,7 @@ async function handleLogout() {
     }
 }
 
+// ================== UI MANAGEMENT ==================
 // Update UI based on authentication state
 function updateAuthUI(session) {
     const userNav = document.getElementById('user-nav');
@@ -466,7 +475,9 @@ async function initializeAuth() {
     try {
         // Ensure Supabase is initialized
         if (!window.supabase) {
-            window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            if (!initializeSupabase()) {
+                throw new Error('Failed to initialize Supabase');
+            }
         }
         
         const { data: { session }, error } = await window.supabase.auth.getSession();
@@ -481,6 +492,7 @@ async function initializeAuth() {
         updateAuthUI(session);
         authInitialized = true;
         
+        // Listen for auth state changes
         window.supabase.auth.onAuthStateChange((event, session) => {
             console.log('Auth state changed:', event);
             
@@ -496,6 +508,7 @@ async function initializeAuth() {
     }
 }
 
+// ================== INITIALIZATION ==================
 // Initialize auth when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM Content Loaded - initializing auth...');
@@ -600,8 +613,19 @@ input:focus {
 </style>
 `;
 
-document.head.insertAdjacentHTML('beforeend', authStyles);
+// Inject styles
+if (document.head) {
+    document.head.insertAdjacentHTML('beforeend', authStyles);
+}
+
+// Make functions available globally
+window.showLoginModal = showLoginModal;
+window.closeLoginModal = closeLoginModal;
+window.closeSignupModal = closeSignupModal;
+window.loginWithGitHub = loginWithGitHub;
+window.handleLogout = handleLogout;
 
 // Final log
 console.log('✅ auth.js COMPLETELY LOADED');
 console.log('✅ signUp is DEFINED:', typeof window.signUp === 'function');
+console.log('✅ supabase is DEFINED:', typeof window.supabase !== 'undefined');
