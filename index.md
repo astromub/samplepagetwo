@@ -57,8 +57,6 @@ title: AstroMub Store
 
 <!-- Load Supabase and auth scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/samplepagetwo/assets/auth.js"></script>
-<script src="/samplepagetwo/assets/cart.js"></script>
 
 <style>
 /* Navigation Styles */
